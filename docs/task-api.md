@@ -1,12 +1,12 @@
 # Limited task snapshot API, schema 1
 
-This API stores and verifies explicit task inputs. It is not a launcher, release authenticator, complete runtime contract or automatic policy discovery system. There are no task CLI commands in v0.1.0.dev0.
+This Python-only artifact API stores and verifies explicit task inputs. It is not a release authenticator or automatic runtime. The separate approved-Git CLI/adapters use [runtime.md](runtime.md); their automatic work slot does not reuse this artifact API's slot.
 
 ## Trust before integrity
 
 An operator must authenticate an approved source/release, verify the installed artifact against its attestation, inspect the exported bundle and approve the exact external record. `approved_record_sha256` is the **out-of-band approved digest of that record**, not evidence obtained by simply hashing an arbitrary supplied record. This package compares identities; it supplies no trust store, signature verifier, Git source verification, artifact-download verification or network resolver.
 
-The development package rejects operational preparation even with a record claiming approval. The stable path is exercised only by explicitly synthetic release fixtures in tests. No real wheel/source approval exists for this development source tree.
+Artifact preparation rejects development packages even with a record claiming approval. Its stable path is exercised only by explicitly synthetic release fixtures. Approved-Git runtime trials do not require or fabricate an artifact release record.
 
 External UTF-8 JSON release record fields (exact schema; no production example values):
 
@@ -70,6 +70,6 @@ receipt = join_task(
 - Retain the prepared task digest separately; reviewer receives that same identity. Join verifies exact inventory, manifest and bytes, consumer identity and fixed task location. No independent release lookup, mutable local-policy reread or installed-version resolution.
 - Receipt includes role, task ID/digest, consumer identity, source full SHA, common bundle and policy/overlay digests. Both roles get identical identities except role. The caller retains receipts externally; joins do not modify the manifest or persist session state.
 - Local policy edits and package upgrades cannot replace task bytes. Agreed changes require a new task snapshot; this API has no live rebaseline or upgrade operation. Existing snapshots verify offline without the original package version or release network access.
-- Neither joins nor read-only modes force agents to load instructions, detect runtime policy drift, record validation outcomes, prevent snapshot deletion, or manage running sessions. Full launcher/adapters and `finish` semantics are deferred. No manifest field is executed as a product command.
+- Artifact joins and read-only modes do not inject instructions, detect live policy drift, record validation outcomes, prevent snapshot deletion or manage running sessions. Use the separate Git runtime for installed adapters and explicit closure. No manifest field is executed as a product command.
 
 Use `verify_snapshot(task, expected_digest)` for generic offline integrity checks. It checks content, not approval or task-specific context; use `join_task` for role/consumer checks. APIs raise `SnapshotError` for rejected identity/path/policy and may raise `OSError` for filesystem failures. Preserve failures rather than treating missing files/configuration as success.

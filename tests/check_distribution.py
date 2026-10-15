@@ -19,6 +19,7 @@ import zipfile
 PAYLOAD = ("AGENTS.md", "decisions/boundaries.md", "decisions/reliability.md",
            "procedures/verification.md", "references/upstream.md")
 NOTICES = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "provenance/README.md")
+ADAPTERS = ("adapters/opencode.js",)
 
 
 def run(*arguments, cwd):
@@ -56,6 +57,11 @@ def main():
         actual_payload = {name.removeprefix("flutter_agent_guidelines/payload/")
                           for name in wheel_names if name.startswith("flutter_agent_guidelines/payload/")}
         assert actual_payload == set(PAYLOAD), actual_payload
+        for name in ADAPTERS:
+            packaged = "flutter_agent_guidelines/" + name
+            expected = (repository / "src" / packaged).read_bytes()
+            assert archive.read(packaged) == expected
+            assert source_archive.extractfile(prefix + "src/" + packaged).read() == expected
         for name in NOTICES:
             destination, = [entry for entry in wheel_names if entry.endswith(".dist-info/licenses/" + name)]
             expected = (repository / name).read_bytes()
@@ -63,6 +69,8 @@ def main():
             assert source_archive.extractfile(prefix + name).read() == expected
         assert all(not member.issym() and not member.islnk() for member in source_members.values())
         assert prefix + "docs/task-api.md" in source_members
+        assert prefix + "docs/runtime.md" in source_members
+        assert prefix + "tests/adapter_harness.mjs" in source_members
         assert not any("__pycache__" in name or name.startswith("tests/") for name in wheel_names)
     environment = temporary / "installed"
     venv.EnvBuilder(with_pip=True).create(environment)

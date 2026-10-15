@@ -1,6 +1,7 @@
 # Flutter engineering: common entry
 
-Packaged guidance for developers and agents. No installed runtime or automatic enforcement supplied.
+Flutter guidance for developers and agents. Installed adapters verify pinned content;
+written engineering rules are not analyzer or operating-system enforcement.
 
 ## Authority and task identity
 
