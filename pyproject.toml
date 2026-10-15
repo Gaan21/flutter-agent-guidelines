@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flutter-agent-guidelines"
+version = "0.1.0.dev0"
+description = "Flutter engineering guidance with explicit integrity-checked snapshots"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "provenance/README.md"]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/Gaan21/flutter-agent-guidelines"
+
+[project.scripts]
+flutter-guidelines = "flutter_agent_guidelines.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.package-data]
+flutter_agent_guidelines = ["payload/AGENTS.md", "payload/decisions/*.md", "payload/procedures/*.md", "payload/references/*.md"]
