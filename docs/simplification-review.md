@@ -39,6 +39,78 @@ Mark which ones a simpler design keeps, weakens or drops.
 8. **Multiple stacks.** Adding a new framework means adding content, not a new
    tool, installer or lifecycle.
 
+## Current process end to end
+
+As of runtime bootstrap `6d328c3` and content `e8ac7ca`, as actually run by the
+first consumer (macOS arm64, zsh, Claude Code and OpenCode). Commands use
+`cli` for `<tools-venv>/bin/python -I -m flutter_agent_guidelines.cli`.
+
+### One-time setup per machine and repository
+
+1. **Tools environment.** Create a dedicated virtual environment and install the
+   package from Git at the bootstrap commit. The consumer uses one immutable
+   environment per bootstrap commit (`uv venv --python 3.14` plus
+   `uv pip install "flutter-agent-guidelines @ git+<url>@<bootstrap>"`) and checks
+   the installed distribution's origin and commit. Installed hooks record this
+   Python executable, so the environment is never upgraded in place.
+2. **Approval record (consumer convention).** A versioned JSON file in the
+   consumer: source URL, ref (`refs/heads/develop`), `auto_update: true`,
+   bootstrap commit.
+3. **Configure.** `cli configure --repo P --source-url U --source-ref R
+   --auto-update` previews; `--apply` writes the ignored machine-local runtime
+   configuration at the consumer root. Refuses while a work is active or a
+   previous integration is installed.
+4. **Review existing guards.** `cli inventory-hooks --repo P` lists project hooks
+   with fingerprints; each existing PreToolUse guard must be attested with
+   `cli review-guard --repo P --source S --digest D --non-instruction-guard
+   --apply`. Unreviewed guards are not accepted.
+5. **Install.** `cli install --repo P` previews; `--apply` writes the Claude Code
+   hooks into the ignored local Claude settings and generates the OpenCode
+   adapter plugin; then `cli doctor --repo P`.
+6. **Restart both clients** and verify in each one: injected source, revision and
+   snapshot identity; folder-guide loading; `doctor` and `status`.
+
+The consumer wrapped steps 1, 3, 4 and 5 in a staged installer script (no
+argument, `--configure`, `--install`) and added an integration probe.
+
+### Each unit of work
+
+- **Start.** The first session's start/prompt hook runs the bootstrap: it resolves
+  the ref to a commit, prepares that controller, adapters and guidance,
+  snapshots the local policy files, creates a work identity, records a session
+  lease and injects the entry page.
+- **Join.** Further conversations, including the reviewer, join the same work.
+- **Upstream push.** Only reported as `UPDATE`; nothing changes for open work.
+- **Local policy edit** (any discovered `AGENTS.md`/`CLAUDE.md`). Work moves to
+  `rebaseline-required`; reads and edits continue; `end` is refused until
+  `cli rebaseline --repo P` (plan) and `--apply`, which require zero registered
+  sessions, so they run from a terminal after exiting every client.
+- **Finish.** After acceptance, `cli end --repo P` marks the work closing; it is
+  archived when the last session releases its lease on exit. The next
+  conversation starts a new work at the latest revision. Without `end`, the
+  consumer stays on the old revision indefinitely.
+
+### Changes and recovery actually needed
+
+- **Bootstrap migration** (manual controller to automatic updates): `end`, exit
+  all sessions, `uninstall` with the old CLI, create the new tools environment,
+  configure, review guards, install, restart, verify. It took several sessions.
+- **Removing one project guard hook.** Every command then failed with
+  `reviewed guard missing/changed`; there is no CLI command to drop a review.
+  Removing the entry from the machine-local configuration by hand then failed
+  every command with `configuration drift during pinned work`, including the
+  session release on exit, while `rebaseline` refuses with registered sessions.
+  Working order: restore the guard entry and the configuration so state is
+  consistent, exit the sessions, then remove the guard and its review entry,
+  run `rebaseline --apply` (it accepts the new configuration) and `doctor`.
+- **Agent limits.** The runtime's protection guard blocks agent writes and
+  searches touching protected state. It also matches file *content*: writing a
+  recovery script, and even editing this document in another repository, was
+  rejected because the text named the runtime's own files. Most lifecycle and
+  recovery steps were therefore handed to the owner as terminal commands. A
+  multi-line shell function pasted into a terminal broke on a line wrap and left
+  an interactive Python prompt waiting.
+
 ## Friction observed in the first adoption
 
 - **Install prerequisites:** uv, a dedicated Python 3.14 virtual environment per
