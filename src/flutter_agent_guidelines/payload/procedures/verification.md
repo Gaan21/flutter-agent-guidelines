@@ -63,6 +63,16 @@ Verify a gate using clean input, known violation, crash, missing SDK/config/pack
   not install, change pins/profiles, close work or publish. First identify installed
   versus legacy delivery and the current guidance identity, resolved lint dependency,
   effective options/severities and local contracts.
+- An explicit request to update guidance authorizes routine installed-mode package,
+  pin and connection updates; complete them without repeated permission prompts.
+  Resolve the approved candidate once, preserve rule selections/local contracts and
+  rollback material, verify and report the result. An incompatible policy, source
+  change, required lint upgrade or legacy migration is a new decision. Git actions,
+  work acceptance and actual client restart still follow their separate contracts.
+- A wheel or local checkout is not automatically latest. For a requested latest
+  source update, use the project's approved source/ref and keep one exact commit
+  through installation and review. Existing contexts keep already-delivered text;
+  report any restart verification still pending instead of claiming fresh context.
 - Compare against one exact candidate revision/release, shared with review. Classify
   content, executable, lint, policy and migration changes. Report effects on selected
   rules and product contracts, proposed validation and rollback before applying.

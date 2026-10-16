@@ -1,52 +1,91 @@
 # Flutter Agent Guidelines
 
-**Give Claude Code and OpenCode the same focused Flutter guidance, using an explicitly selected installed version.**
+**Give Claude Code and OpenCode Flutter instructions automatically when you work in a connected project.**
 
-Install the Python tool once in a tools environment, then connect each project
-explicitly. The project records the exact payload and controller identity. Opening
-a conversation or pushing upstream never selects a new version or fetches Git.
+This is the **guidance package**: written advice and the tool that delivers it to
+your agent. [dart-architecture-lints](https://github.com/Gaan21/dart-architecture-lints)
+is a **separate lint package** that checks code. They have separate installations.
+Guidance does not install or activate the linter; the linter does not load guidance.
 
-## How it works
+## Everyday use, in plain language
 
-1. Install an owner-approved package in a dedicated tools environment.
-2. Record its exact identity in the project's versioned pin and install the local connection.
-3. Open your agent normally. It receives the short public entry page; details are read only when relevant.
-4. Implementer and reviewer compare the same project identity, including on different machines.
-5. Update the package and project pin explicitly between work/review cycles, then reload agent contexts.
+| What you tell your project agent | What it should do |
+|---|---|
+| **"Set up the Flutter guidelines for this repository."** | Install the tools package if needed, connect the chosen clients, record the version, and tell you to restart them. Confirm the initial architecture selection if the project has none. |
+| **"Update the Flutter guidelines; there are changes."** | Obtain the current approved source candidate, install it, update the project pin, run checks and report the result. Preserve selected rules and product decisions. |
+| **"The Flutter guidelines changed; review them."** | Compare and report. Do not install or change the project. |
+| **"Disable this architecture rule in this project."** | Change that rule's executable selection and the corresponding local written contract together; keep the other choices. |
 
-There are no work leases, mandatory `end`, or policy `rebaseline` in installed
-mode. Editing local `AGENTS.md`, `CLAUDE.md` or ordinary tool guards does not change
-the public guidance identity. Native project and folder instructions retain their
-authority and scope. Analyzer, lint and test execution remains project-owned.
+These are instructions to a capable coding agent, **not commands parsed by the
+package**. Routine update permission is already given by "update": the agent
+should complete the operation, not stop after proposing it or request the same
+permission at each step. It should ask only if it finds an incompatible policy,
+an unapproved source, a required migration or a genuinely new decision. Git
+publication and client restart/exit remain separate capabilities/authorizations.
 
-## What a project chooses
+After setup, open your agent normally. It gets a short starting page and reads
+details when relevant. The project keeps its own `AGENTS.md` and folder contracts.
+Installed mode needs no work leases, `end` or policy `rebaseline`.
 
-There are three separate inputs; installing one does not activate the others:
+## Can I choose individual rules?
 
-| Input | Selected in | Effect |
-|---|---|---|
-| Guidance version and profile | `.flutter-guidelines-installed.json`, through the CLI | Which written guidance the agent receives and follows |
-| Executable lint rules, options and severity | The Flutter package's `analysis_options.yaml`, with its locked lint dependency | Which diagnostics actually run |
-| Product decisions and exceptions | Project/folder `AGENTS.md`, native Claude instructions, and referenced local contracts | What applies to this product and these files |
+**Yes. Architecture is a starting selection, not an all-or-nothing requirement.**
+The owner chooses policy; the agent edits the project's configuration:
 
-The owner chooses; an agent implements the approved selection. The tool does not
-guess a product from its repository name. Two Flutter products can share the same
-guidance version and choose different lint selections and local contracts. A
-monorepo can give each Flutter package its own lint configuration and scoped guides.
+| Choice | Where it lives |
+|---|---|
+| Exact guidance version and optional architecture starting profile | `.flutter-guidelines-installed.json`, written by the CLI |
+| Individual executable rules, options and severity | Flutter package's `analysis_options.yaml`, with its locked lint dependency |
+| Product architecture and any exceptions to the shared guidance | Root/folder `AGENTS.md` and referenced local contracts |
 
-The optional `architecture` guidance profile is a reusable convention, **not a
-product identity**. It recommends the matching 48-rule lint selection, including
-strict names and member order. Generic guidance selects no such architecture.
-The linter also offers a four-rule style sample and a 51-rule legacy sample;
-these are lint samples, not additional `--profile` names in this guidance CLI.
+In the linter's `custom_lint.rules` list, `true` enables a rule and `false` disables
+it. For example, a deliberately small selection can keep strict names and method
+order without requiring a particular entity generator:
 
-For a different rule selection, change the executable configuration and document
-the approved deviation in local instructions in the same review. Never just
-disable a diagnostic while leaving its obligation unexplained to the agent.
-The optional recorded pair checks the **stock 48-enabled architecture selection**
-and selective typing. It records other declared options/severities; it does not
-validate arbitrary consumer overrides or attest the effective consumer runtime.
-See [project selection and updates](docs/project-workflow.md).
+```yaml
+custom_lint:
+  enable_all_lint_rules: false
+  rules:
+    - method_order: true
+    - variable_name_should_contain_class_name: true
+    - domain_entities_must_use_freezed: false
+```
+
+This example enables **only two custom rules**. For an existing project, edit its
+existing entries rather than replacing its whole configuration with this example.
+Severity is separate and belongs under `analyzer.errors`.
+
+If shared guidance recommends the generator but this product does not use it,
+record that exception and the chosen alternative locally too. **Silencing a lint
+does not by itself change the written architecture.** Local contracts make the
+choice visible to the agent; the repository name does not identify a rule set.
+
+The full architecture sample selects 48 of 51 rules; style selects four and legacy
+selects all 51. Without explicit selection, the lint plugin retains all 51 defaults.
+These are reusable lint samples, not automatic consumer configuration updates.
+Only `architecture` is currently a guidance CLI profile name.
+
+The optional recorded lint pair is an advanced check for the stock architecture
+selection. It is **not required to use guidance or customize lint rules**, and it
+does not certify custom selections or the effective consumer runtime. If a project
+already records a pair, change it deliberately rather than attaching an unchanged
+stock contract to custom rules. See [project choices](docs/project-workflow.md).
+
+## Does installation get the latest `develop`?
+
+**It depends on what is installed.** A wheel installs the version/bytes in that
+wheel. Building a local checkout uses that checkout, even if it is old. Neither
+connecting a project nor `upgrade-installed` fetches Git or installs a package.
+
+For this development-source distribution, **"install/update the latest" means the
+agent fetches the approved public source's `develop` once, records the exact full
+commit and installs that candidate**. An explicit requested commit/release or a
+different approved project update policy takes precedence. Later pushes do not
+change that installed version. Another request to update repeats this process.
+
+There is no registry release yet; installing a fresh tools checkout from the
+approved branch is a source trial, not a PyPI release. The agent can handle these
+steps for you; the manual commands below explain what it does.
 
 ## 1. Install the tool once
 
@@ -131,36 +170,37 @@ guidance injection. Instructions already delivered remain in existing contexts.
 
 ## 3. Updates are explicit
 
-**"The Flutter guidelines package changed; review it" means review, not update.**
-The agent should identify the current delivery mode, guidance pin, selected profile,
-resolved linter and effective local configuration; inspect an identified candidate;
-then report changes, affected local contracts and the proposed update/migration.
-It must not upgrade packages, rewrite pins, switch profiles or close work merely
-because a review was requested. A push is neither a registry release nor an
-installed update. [The agent checklist](docs/project-workflow.md#agent-update-review)
-defines this workflow, including legacy installations.
-
-Git pushes and conversations do nothing to version selection. Install the new
-owner-approved package into the tools environment (or a new tools environment),
-then preview and apply the project change using that new executable:
+For **"update the Flutter guidelines"**, the agent performs the
+[routine update workflow](docs/project-workflow.md#agent-request-update-the-flutter-guidelines):
+resolve the approved candidate once, preserve the old environment for rollback,
+build/install in a new tools environment, and use that new executable to preview
+and apply the project pin/connection change:
 
 ```sh
 /absolute/tools/flutter-guidelines/bin/flutter-guidelines upgrade-installed --repo "$PROJECT"
 /absolute/tools/flutter-guidelines/bin/flutter-guidelines upgrade-installed --repo "$PROJECT" --apply
 ```
 
-This shows the old and new exact pins, creates a new immutable export, and
-refreshes the owned connection to the selected interpreter. It never installs a
-package or updates an executable itself. Review and commit the changed pin;
-restart affected clients and reload contexts before the next work/review cycle.
-Old exports are retained, never edited. Keep exact wheels available for matching
-other machines or rollback. See [Installed mode](docs/installed-mode.md).
+The agent checks compatibility before applying, completes the authorized routine
+steps, and reports old/new identities, checks and restart needs. It leaves Git
+changes for the normal authorized review/commit workflow. This CLI step itself
+does not fetch/install the candidate; the preceding install does that. Restart
+affected clients and reload contexts before the next work/review cycle. Old
+exports remain intact. See [Installed mode](docs/installed-mode.md).
+
+For **"review the changed guidelines"**, use the
+[review-only checklist](docs/project-workflow.md#agent-update-review) instead.
 
 An update does not require changing the linter if its existing contract remains
 compatible. If executable rules/options change, separately update the locked lint
 dependency and local configuration, run the approved project checks, and refresh
 any recorded pair before accepting the new combination. No CLI here installs Dart
 dependencies or copies a lint profile into your project.
+
+Do not update the lint dependency just because the guidance changed. If keeping it
+would make the requested update incompatible, explain the specific dependency
+change needed. A routine guidance update does not authorize changing architecture
+choices or refactoring the product to fit new recommendations.
 
 Omitting profile options preserves the current choice during configure or upgrade.
 Changing profiles requires explicit `upgrade-installed --profile architecture`

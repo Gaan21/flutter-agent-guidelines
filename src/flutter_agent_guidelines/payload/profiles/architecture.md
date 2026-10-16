@@ -15,6 +15,12 @@ language restrictions are intentional; they do not remove architecture controls.
 The legacy selection retains all 51 and blanket typing for existing consumers.
 Do not replace an existing selection wholesale or infer migration approval.
 
+This is a starting contract, not an indivisible switch. Approved project-specific
+deviations must name the affected rules and their alternatives in native local
+instructions as well as executable configuration. Those local contracts govern
+the affected sections below; disabling a detector alone does not rewrite policy.
+The optional recorded stock lint pair does not certify customized enabled states.
+
 Record exact guidance and lint identities, selected options, severities and local
 exceptions with the project revision used for implementation and review. Inspect
 the installed plugin and actual configuration; a rule present only in YAML may not

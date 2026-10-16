@@ -116,6 +116,46 @@ A legacy automatic channel remains capable of selecting a newer revision at its
 existing work boundary. A review request does not pause that earlier approval.
 Report this distinction; any hold/pin or migration is an explicit owner operation.
 
+## Agent request: update the Flutter guidelines
+
+An explicit **"Update the Flutter guidelines; there are changes"** authorizes a
+routine installed-mode update, not just a proposal. Complete the steps below
+without asking again for the same routine package/pin/connection permission.
+It does not mean "perform this update now" when the user is merely discussing
+the desired workflow or asking you to edit documentation.
+
+1. Inspect the actual mode, project pin, approved source/update policy, connection
+   and existing local changes. Do not mix legacy and installed mode. A legacy
+   connection requires its one-time migration/lifecycle, not this routine update.
+2. Use the explicitly requested candidate if supplied. Otherwise fetch the approved
+   source's update branch once; this package's documented development-source default
+   is `https://github.com/Gaan21/flutter-agent-guidelines.git`, `refs/heads/develop`.
+   Record its full commit and retain it throughout install and review. A project's
+   more specific approved source/ref wins; do not change publishers or resolve
+   latest independently in another session. A wheel/local checkout does not fetch
+   latest by itself.
+3. Inspect relevant changes for compatibility with existing selections. Preserve
+   profiles, per-rule choices, options, severities, local product contracts and lint
+   dependency unless its change is specifically necessary and authorized. If the
+   new guidance conflicts with them, report that new decision instead of changing
+   architecture or clearing a recorded pair to make the upgrade succeed.
+4. Keep the old exact wheel/environment. Build/install the exact candidate into a
+   separate tools environment, then use its `upgrade-installed` preview and apply
+   path below. If the candidate is identical, report that no update is needed.
+5. Run the approved package/connection checks and applicable project checks. For a
+   guidance-only change, do not invent product-wide refactoring or an E2E matrix.
+   Compare identities for implementation/review and retain rollback material.
+6. Report previous/new identities, preserved selections, check results and the
+   exact remaining user action. Agents may not be able to restart their own native
+   clients: say "installed; restart verification pending" until that is observed.
+   Do not claim a running conversation adopted fresh instructions. Git commit/push
+   and release still follow the project's separate authorization.
+
+Ask only for a genuinely new decision or a step blocked by the actual environment
+or policy. A missing source approval, incompatible contract, unapproved lint upgrade
+or a legacy migration is such a boundary. Normal preview/apply commands are not
+repeated approval requests after the owner has already requested the update.
+
 ## Apply an approved update
 
 For **installed mode**, after approval and between review cycles:
