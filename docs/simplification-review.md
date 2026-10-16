@@ -1,7 +1,8 @@
 # Simplification review brief
 
-Status: installed-version direction selected; implementation candidate prepared
-and package-tested, with consumer migration/native trials still pending. Original
+Status: installed-version direction implemented and activated in the first
+consumer (2026-10-16). Owner verdict: still too heavy to install and update; see
+[installed-mode adoption feedback](#installed-mode-adoption-feedback--2026-10-16). Original
 review requested by the owner on 2026-10-15. Audience: the next agent or
 maintainer asked to review this repository's delivery model. Deliverable: a written
 comparison and recommendation. Do not change code, release or consumer
@@ -26,6 +27,56 @@ conversation or pushing upstream must not select a newer revision automatically.
   and [project choices/update review](project-workflow.md) for the candidate and
   explicit migration. Legacy consumers retain their current behavior until
   migration; consumer activation/native validation remain separate steps.
+
+## Installed-mode adoption feedback — 2026-10-16
+
+The first consumer migrated to installed mode (`6687627`) and verified it in a
+fresh session: injected identity equals `status`/`doctor`, both clients connected,
+project guards intact. It works, but the owner's verdict is that installation and
+updating are **still too complex**: it should be one command and done. Installed
+mode removed leases, `end` and `rebaseline`; it did not remove the setup and update
+mechanics around them.
+
+What the consumer still has to run or maintain:
+
+- **Prerequisites:** Git, uv, Python 3.14, one immutable virtual environment per
+  approved commit, provenance check of the installed distribution.
+- **First connection:** approval JSON, then `configure --installed` preview/apply,
+  `install` preview/apply, `doctor --expected <identity>`, restart both clients.
+- **Each update:** fetch the ref, edit `installed_commit`, provision a new
+  environment, `upgrade-installed` preview/apply, `doctor`, consumer probe and hook
+  smoke tests, restart both clients, commit the new pin.
+- **Consumer-owned glue:** an 80-line staged installer wrapper, an 85-line
+  integration probe and roughly 270 lines of setup, update and evidence docs.
+- **Migration cost:** legacy rebaseline, `end`, uninstall, archiving legacy
+  configuration, three installer stages, restarts and a separate verification
+  session; some edits had to wait until the legacy guard was gone.
+
+Defects and rough edges seen during the migration:
+
+- Legacy `uninstall` removed the ignore entry for legacy state that it leaves on
+  disk, so the retained state appeared untracked and could be committed.
+- Importing the generated OpenCode plugin outside OpenCode (consumer probe) prints
+  a Node module-type warning.
+
+Directions the owner asked to evaluate (no decision yet):
+
+1. **One command.** A single `install`/`update` entry point in the package (for
+   example `uvx`/`pipx run … sync --repo .`) that reads the project approval,
+   provisions the environment, writes the pin, connects both clients and runs
+   `doctor`, so consumers need no wrapper script. Preview stays available as an
+   option rather than a mandatory stage.
+2. **Split packages.** Separate guidance content (Markdown, versioned per stack)
+   from a small stack-agnostic delivery tool, so content updates do not imply new
+   executable code and a second stack reuses the same tool.
+3. **Publish releases.** Tagged releases on a registry (PyPI) or client-native
+   marketplaces (Claude Code plugins, OpenCode equivalent) so updating is "bump a
+   version" instead of commit SHAs and per-commit environments.
+4. **Revisit the alternatives below** (plain Git content, native packaging, thin
+   fetch hook) against the success criteria, now with installed-mode evidence.
+
+Measure any proposal against the success criteria: one command plus at most one
+restart for a new repository, and a single obvious step for updates.
 
 ## Why
 
