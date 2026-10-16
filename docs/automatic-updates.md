@@ -25,6 +25,14 @@ migration rather than silently installing from another registry.
 
 ### What the owner approves
 
+The owner designates `refs/heads/develop` of
+`https://github.com/Gaan21/flutter-agent-guidelines.git` as the automatic channel's
+approval point. Each push to `develop` approves execution of that revision's
+controller and adapters by consumers configured with `--auto-update` when they
+start their next work. Existing work retains its pinned identity. Agents must
+obtain explicit owner authorization before pushing to `develop`; preparing changes
+or passing tests does not authorize a push.
+
 ```sh
 flutter-guidelines configure --repo "$PROJECT" \
   --source-url https://github.com/Gaan21/flutter-agent-guidelines.git \
