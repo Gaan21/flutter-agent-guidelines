@@ -10,7 +10,7 @@ Packaged generic guidance. Concrete protocols belong to the consumer.
 - An overlay's resources must survive its own lifecycle, including caller removal. Prefer an explicit overlay State owner; reusable scoped search and one-screen form resources can have distinct owners under local contracts. Avoid mixin/static-map ownership without an explicit reviewed lifecycle contract.
 - Use the overlay builder's context or previously resolved plain values for inherited lookups. An after-await mounted check addresses an async gap, not captured caller-context validity during later overlay rebuilds.
 - Dialog buttons return a result through the dialog builder's context. Await `showDialog`, check the caller's mounted state, then run result callbacks or follow-up effects. Coordinate any further navigation with the route lifecycle.
-- Give form exit one owner: after saving a form guarded by `PopScope(canPop: ...)`, show the outcome and let the user leave through the guarded back action. Keep automatic post-save pops out of that flow to avoid duplicate pops.
+- Give form exit one owner. Decide whether successful save closes the form or leaves it visible according to the consumer's UX contract; coordinate `PopScope`, callbacks and navigation to avoid duplicate pops. Do not impose one exit interaction on every product.
 - Test rapid close/reopen, autofocus, rebuild, caller removal and post-disposal events. Presence of a close/super call is not proof of all-path cleanup or completion.
 
 ## Operation completion and concurrency
@@ -20,7 +20,7 @@ Packaged generic guidance. Concrete protocols belong to the consumer.
 - Choose latest-result cancellation/discard for replaceable reads, single-flight/shared completion for duplicate writes, and justified independence for parallel reads. Preserve existing per-screen restrictions until an approved operation contract replaces them.
 - Cancellation does not necessarily cancel server effects. Define idempotency and late acknowledgment handling; do not assume dropping a Future undoes a write.
 - Background work needs explicit noncritical purpose, reason, error owner and reporting/completion policy. Do not hide discarded work in microtasks, timers, wrapper Futures or ignore calls.
-- Schedule initial UI loading post-frame, outside `Provider.create` and `build` execution, with a mounted/lifetime check. Preserve installed disposal contracts and explicit boundaries for synchronous entrypoints and async action handlers.
+- Prevent state notifications from invalidating the tree during build. Where the selected contract forbids detached work in provider construction, defer it through the approved lifecycle seam, with a mounted/lifetime check. Post-frame scheduling is one technique, not proof of correct ownership or a universal ban on asynchronous initialization. Preserve installed disposal and action-handler contracts.
 - For overlapping initial load, refresh and retry triggers, share the in-flight Future for the same operation; clear it on success and failure so later retries can run. Refresh returns that completion to its caller.
 - Verify the installed justification syntax; a prose reason alone may not satisfy categorized checks. A valid tag does not prove harmlessness or error handling.
 - Search debounce duration is a product choice. Test rapid typing, clear, disposal and stale responses with controlled time; do not wire state owners together merely because an old example does.

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — 2026-10-16
+
+- Add offline installed-version delivery with an explicit portable project pin,
+  selected architecture guidance, and preview/apply updates. Legacy source and
+  artifact-task modes remain separate; no consumer migration is implicit.
+- Add an opt-in architecture/lint contract retaining strict class-containing names
+  and getter-first member order, with selective typing and bounded control evidence.
+- Clarify epoch semantics, conditional UI initialization and form-exit ownership;
+  separate guidance identity from mode-specific work leases and policy rebaseline.
+
 ## Unreleased — 2026-10-15
 
 - Add explicit `--auto-update` source-execution approval, stable native transports,

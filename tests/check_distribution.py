@@ -17,9 +17,10 @@ import venv
 import zipfile
 
 PAYLOAD = ("AGENTS.md", "decisions/boundaries.md", "decisions/reliability.md",
-           "procedures/verification.md", "references/upstream.md")
+           "procedures/verification.md", "references/upstream.md", "profiles/architecture.md")
 NOTICES = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "provenance/README.md")
-ADAPTERS = ("adapters/opencode.js", "adapters/opencode-bootstrap.js", "bootstrap-contract.json")
+ADAPTERS = ("adapters/opencode.js", "adapters/opencode-bootstrap.js",
+            "adapters/opencode-installed.js", "bootstrap-contract.json")
 
 
 def run(*arguments, cwd):
@@ -70,7 +71,9 @@ def main():
         assert all(not member.issym() and not member.islnk() for member in source_members.values())
         assert prefix + "docs/task-api.md" in source_members
         assert prefix + "docs/runtime.md" in source_members
+        assert prefix + "docs/installed-mode.md" in source_members
         assert prefix + "tests/adapter_harness.mjs" in source_members
+        assert prefix + "tests/installed_adapter_harness.mjs" in source_members
         assert not any("__pycache__" in name or name.startswith("tests/") for name in wheel_names)
     environment = temporary / "installed"
     venv.EnvBuilder(with_pip=True).create(environment)

@@ -75,7 +75,7 @@ def source_files(source, revision, cache):
         selected = (name in {*NOTICES, "pyproject.toml"} or name.startswith(PREFIX) and
                     (re.fullmatch(r"[a-z_]+\.py", relative) or
                      relative in {"bootstrap-contract.json", "adapters/opencode.js",
-                                  "adapters/opencode-bootstrap.js"} or
+                                   "adapters/opencode-bootstrap.js", "adapters/opencode-installed.js"} or
                      relative in {"payload/" + item for item in PAYLOAD}))
         if selected:
             mode, kind, oid = header.decode().split()

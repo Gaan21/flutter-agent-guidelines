@@ -1,9 +1,31 @@
 # Simplification review brief
 
-Status: open, requested by the owner on 2026-10-15. Audience: the next agent or
+Status: installed-version direction selected; implementation candidate prepared
+and package-tested, with consumer migration/native trials still pending. Original
+review requested by the owner on 2026-10-15. Audience: the next agent or
 maintainer asked to review this repository's delivery model. Deliverable: a written
 comparison and recommendation. Do not change code, release or consumer
 installations as part of the review; the owner decides afterwards.
+
+## Owner-selected direction — 2026-10-16
+
+The owner chose explicit installed-version selection instead of the current
+cross-session work lifecycle. Package distribution remains suitable: agents use
+the selected installed guidance until an explicit update changes it. Opening a
+conversation or pushing upstream must not select a newer revision automatically.
+
+- Prefer a project-recorded exact version/revision and content fingerprint so
+  implementation and review can check the same identity across machines.
+- A machine-level installation may supply that version, but installation alone
+  does not establish a shared project pin. Version mismatches must be visible.
+- Plan updates between work/review cycles and reload affected agent contexts;
+  existing conversations retain instructions already delivered.
+- Evaluate removing work leases, mandatory `end`, and policy `rebaseline` from
+  the replacement delivery model. Keep focused reading and native local scope.
+- The owner subsequently authorized implementation. See [installed mode](installed-mode.md)
+  and [project choices/update review](project-workflow.md) for the candidate and
+  explicit migration. Legacy consumers retain their current behavior until
+  migration; consumer activation/native validation remain separate steps.
 
 ## Why
 

@@ -1,4 +1,7 @@
-# Automatic updates at work boundaries
+# Legacy automatic updates at work boundaries
+
+This is an explicit compatibility path. New connections should use
+[installed-version delivery](installed-mode.md); migration requires owner action.
 
 Configure each consumer worktree once with `--auto-update`. Compatible future work
 uses the latest successfully resolved commit of the approved channel, including

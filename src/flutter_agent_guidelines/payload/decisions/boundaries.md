@@ -9,6 +9,7 @@ Apply the consumer's concrete contracts before these packaged generic recommenda
 - Keep selected mappers deterministic and free of I/O, clocks and invented business defaults. Distinguish rejecting malformed technical input from assigning domain defaults. Preserve mapping failures and field information.
 - Define create/update identity explicitly. Do not invent sentinel IDs; verify absent/generated/local/remote identity semantics against the API.
 - Prefer immutable values and collection safety. A generator annotation does not prove deep immutability, equality or codec correctness. Generation tools are consumer choices; validate compatibility and nested mutation behavior.
+- Use the selected typing and naming policy. Inference retains static types; explicit annotations clarify public contracts or a deliberately chosen type. Do not repeat class names mechanically unless the project's strict naming contract requires it. An activated architecture profile can deliberately be stricter than upstream style.
 - Make dependencies and lifetimes explicit at composition roots. Separate borrowed from owned objects; verify factory/singleton lifetime and disposal. Infrastructure settings may have a different lifetime from domain state.
 - Put orchestration where the consumer assigns it. Avoid dependency cycles; do not add wrappers or change usecase composition solely to imitate a tutorial.
 
@@ -26,6 +27,7 @@ Apply the consumer's concrete contracts before these packaged generic recommenda
 
 - Separate current-time acquisition, persisted instants, civil/date-only values and display timezone. Use an injectable/testable current-time seam.
 - Preserve the consumer's instant serialization and zone conversion contract. Device-local conversion is not a substitute for a business/company timezone.
+- Epoch milliseconds identify an instant independently of the DateTime's display zone; do not add conversion solely to read that value. Civil dates and clock adapters need explicit scopes, not a blanket conversion of every date to UTC.
 - Keep backend-resolved reporting inputs and date-only exceptions explicit. Missing product time authority blocks contract-changing work.
 - Test device/business-zone differences, midnight, DST transitions and serialization round trips. Helper names and redundant UTC conversion syntax do not prove correctness.
 

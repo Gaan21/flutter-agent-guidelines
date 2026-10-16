@@ -1,200 +1,224 @@
 # Flutter Agent Guidelines
 
-**Give Claude Code and OpenCode the same Flutter guidance, without loading a whole multi-stack handbook.**
+**Give Claude Code and OpenCode the same focused Flutter guidance, using an explicitly selected installed version.**
 
-This repository contains the Flutter guidelines and the small tool that loads them into your agent. Your application keeps its own project-specific decisions. There is no second central rule catalog to maintain.
+Install the Python tool once in a tools environment, then connect each project
+explicitly. The project records the exact payload and controller identity. Opening
+a conversation or pushing upstream never selects a new version or fetches Git.
 
 ## How it works
 
-After a one-time setup in a Flutter project:
+1. Install an owner-approved package in a dedicated tools environment.
+2. Record its exact identity in the project's versioned pin and install the local connection.
+3. Open your agent normally. It receives the short public entry page; details are read only when relevant.
+4. Implementer and reviewer compare the same project identity, including on different machines.
+5. Update the package and project pin explicitly between work/review cycles, then reload agent contexts.
 
-1. **Open your agent normally.** Before a new work unit, the stable bootstrap resolves the approved channel to an exact commit and prepares its Python controller, compatible adapters and guidance. Only then does the controller create a verified work identity and give the agent a short starting page.
-2. **Work with focused context.** The agent reads detailed guidance only when relevant. Project-local rules remain authoritative; subfolder rules keep their original scope.
-3. **Review against the same rules.** Other agent sessions in that project join the same saved version, including the reviewer.
-4. **Finish the work explicitly.** Once work and review are accepted, the agent or operator marks it finished. After the old sessions exit, the next work uses the latest approved version.
+There are no work leases, mandatory `end`, or policy `rebaseline` in installed
+mode. Editing local `AGENTS.md`, `CLAUDE.md` or ordinary tool guards does not change
+the public guidance identity. Native project and folder instructions retain their
+authority and scope. Analyzer, lint and test execution remains project-owned.
 
-If the guidelines change during work, the tool reports the update but keeps the current version. A new conversation alone does not end the work or change its rules.
+## What a project chooses
 
-The saved copy is called a **snapshot**. It records the exact Git commit and file fingerprints so the tool can detect changed files.
+There are three separate inputs; installing one does not activate the others:
 
-### Shared guidance, local instructions and code checks
+| Input | Selected in | Effect |
+|---|---|---|
+| Guidance version and profile | `.flutter-guidelines-installed.json`, through the CLI | Which written guidance the agent receives and follows |
+| Executable lint rules, options and severity | The Flutter package's `analysis_options.yaml`, with its locked lint dependency | Which diagnostics actually run |
+| Product decisions and exceptions | Project/folder `AGENTS.md`, native Claude instructions, and referenced local contracts | What applies to this product and these files |
 
-```text
-Public Flutter guidance       Shared engineering recommendations
-AGENTS.md in your project     Project architecture, decisions and commands
-lib/data/AGENTS.md            Instructions scoped to that folder
-Your analyzer, lints and tests Executable checks on your application
-```
+The owner chooses; an agent implements the approved selection. The tool does not
+guess a product from its repository name. Two Flutter products can share the same
+guidance version and choose different lint selections and local contracts. A
+monorepo can give each Flutter package its own lint configuration and scoped guides.
 
-The adapter injects the public starting page and its verified identity. Your agent's native instruction loading handles local files; folder instructions keep their original scope. The integration snapshots those local files for identity and drift checks, without turning every folder's instructions into global rules.
+The optional `architecture` guidance profile is a reusable convention, **not a
+product identity**. It recommends the matching 48-rule lint selection, including
+strict names and member order. Generic guidance selects no such architecture.
+The linter also offers a four-rule style sample and a 51-rule legacy sample;
+these are lint samples, not additional `--profile` names in this guidance CLI.
 
-For example, when working in `lib/data/`, the agent should apply the project's instructions and the applicable data-folder instructions. An unrelated presentation-folder guide should not become a global requirement. OpenCode and Claude Code loading behavior must be checked separately; a successful test in one client does not verify the other.
-
-Written guidance helps the agent make decisions. Your project's analyzer, lints and tests still check its code separately; the tool does not install a Flutter lint gate.
-
-## What is available today?
-
-- **Development version:** `0.1.0.dev0`, available as source on GitHub and buildable locally. Not published to PyPI, npm, GitHub Packages or pub.dev.
-- **Implemented:** opt-in automatic controller/content updates, immutable per-revision deployments, local Claude Code/OpenCode integration, shared implementation/review identity, update notices and reversible installation. Existing content-only installations need the [one-time migration](docs/automatic-updates.md#migrate-an-existing-git-installation).
-- **Initial real-project trial:** a reported OpenCode session in a Flutter project received the public guidance and automatically loaded folder-local `AGENTS.md` instructions when reading data and presentation code. This trial used an earlier adapter revision; it does not validate subsequent runtime changes.
-
-| Validation area | Evidence and remaining scope |
-|---|---|
-| Package and automated behavior | Automated tests cover package installation, controller/content updates, fixed revisions, offline behavior, concurrency and identity/protection checks on macOS arm64, Python 3.14.8. See the reproducible package check below; this is not a cross-platform guarantee. |
-| Client configuration | Earlier probes used Claude Code 2.1.301 and OpenCode 1.19.0. Configuration probes do not prove interactive lifecycle behavior. |
-| OpenCode in a real Flutter project | Initial trial reported public injection and folder-local instruction loading. Full lifecycle and subsequent runtime changes still need verification. |
-| Claude Code in a real Flutter project | Public injection and folder-local loading still need separate trial verification; an existing `CLAUDE.md` import alone is insufficient evidence. |
-| Shared review and shutdown | Same-identity reviewer participation, native session release, restart/resume and crash recovery still need end-to-end trial verification. |
-| Recovery and policy changes | Native warning delivery and explicit rebaseline behavior still need trial verification with the updated installed controller. |
-| Automatic executable updates | Isolated Python subprocess and direct Node hook tests cover the stable bootstrap and versioned adapters. Native Claude/OpenCode startup, resume and shutdown still require real-client trials. Factory coordinator integration is pending its own contract. |
-
-**Next:** complete those native lifecycle and recovery checks in controlled consumer trials. Simulated hook events and a successful startup do not prove the whole interactive lifecycle.
+For a different rule selection, change the executable configuration and document
+the approved deviation in local instructions in the same review. Never just
+disable a diagnostic while leaving its obligation unexplained to the agent.
+The optional recorded pair checks the **stock 48-enabled architecture selection**
+and selective typing. It records other declared options/severities; it does not
+validate arbitrary consumer overrides or attest the effective consumer runtime.
+See [project selection and updates](docs/project-workflow.md).
 
 ## 1. Install the tool once
 
-You need **Python 3.11 or newer**, **Git**, and at least one supported agent. Claude Code must be at least 2.1.295. Python 3.11 is the declared minimum; the test run above used 3.14.8.
-
-Clone this repository into a tools directory, outside your application:
-
-```sh
-git clone https://github.com/Gaan21/flutter-agent-guidelines.git
-cd flutter-agent-guidelines
-python3.11 -m venv .venv
-.venv/bin/python -m pip install --upgrade build setuptools wheel
-.venv/bin/python -m build
-.venv/bin/python -m pip install --no-deps dist/flutter_agent_guidelines-0.1.0.dev0-py3-none-any.whl
-source .venv/bin/activate
-flutter-guidelines --help
-```
-
-Replace `python3.11` with your available Python >=3.11 executable. These commands use macOS/Linux shell paths; Windows support has not been tested.
-
-Keep the installed environment in place: the project integration records its Python executable. Installing the tool does not add a dependency to your Flutter application's `pubspec.yaml`.
-
-## 2. Connect a Flutter project
-
-Do this once per project, with the project owner's approval. Use an existing project root, not a subfolder:
+Requires Python **>=3.11**. Use a dedicated tools environment outside your Flutter
+application; this is not a `pubspec.yaml` dependency. There is currently only a
+development version (`0.1.0.dev0`), not a published registry release. For an
+explicitly owner-approved source trial, build and install a reviewed checkout:
 
 ```sh
-PROJECT="/absolute/path/to/your/flutter-project"
-flutter-guidelines configure --repo "$PROJECT" \
-  --source-url https://github.com/Gaan21/flutter-agent-guidelines.git \
-  --source-ref refs/heads/develop --auto-update
+python3.14 -m venv /absolute/tools/flutter-guidelines
+python3.14 -m venv .build-env
+.build-env/bin/python -m pip install build setuptools wheel
+.build-env/bin/python -m build
+/absolute/tools/flutter-guidelines/bin/python -m pip install --no-deps dist/flutter_agent_guidelines-0.1.0.dev0-py3-none-any.whl
 ```
 
-This first command shows the proposed configuration. It does not save it. `--auto-update` approves execution of future compatible Python controllers and adapters from this source, not just Markdown downloads. The example follows `develop`; you can choose an exact full Git commit instead. Omit the flag for legacy content-only operation with a manually maintained controller.
+Run the build commands in the reviewed tools repository. Replace `python3.14`
+with your available supported Python. These examples use macOS/Linux paths;
+Windows is unverified. Once stable releases exist, install the owner's selected
+exact release wheel instead. Hashes establish integrity, **not publisher trust**.
+The separate artifact task approval API still requires stable releases.
 
-If that source is the one you want, save it:
+## 2. Connect a project explicitly
+
+Use the installed executable (or activate its environment). Commands preview by
+default; `--apply` authorizes writes to the selected project:
 
 ```sh
-flutter-guidelines configure --repo "$PROJECT" \
-  --source-url https://github.com/Gaan21/flutter-agent-guidelines.git \
-  --source-ref refs/heads/develop --auto-update --apply
+PROJECT="/absolute/path/to/flutter-project"
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines configure --installed --repo "$PROJECT"
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines configure --installed --repo "$PROJECT" --apply
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines install --repo "$PROJECT"
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines install --repo "$PROJECT" --apply
 ```
 
-The tool discovers existing local `AGENTS.md`, `CLAUDE.md` and Claude rule files. Additional project-specific decisions can be listed with `--policy` or `--overlay`; the scope rules are documented in [Runtime details](docs/runtime.md), section "Context and local scope".
+The default connects both clients; add `--runtime claude` or `--runtime opencode`
+to both `install` commands to select one. Keep the tools environment at its path:
+the local connection records its interpreter, without a shell activation requirement.
 
-Now preview and apply the agent connection:
+### Optional strict architecture profile
+
+Generic guidance is the default: no profile is activated automatically. For
+projects choosing the stricter architecture contract, add `--profile architecture`
+to both `configure --installed` commands above. This is the recommended option
+when the project owner selects those strict architecture and code-structure rules.
+The selected `profiles/architecture.md` is part of the pinned package; context
+names it and requires consulting it before implementation when applicable,
+without injecting the whole profile inline.
+
+To pair it with an independently verified linter source/configuration, add
+`--lint-contract CONTRACT.json` to configure. The pin embeds the complete exported
+contract and canonical digest, without the artifact's machine path. An existing
+pair changes only through `upgrade-installed --lint-contract CONTRACT.json` or
+`--clear-lint-contract` (preview, then `--apply`); omission preserves it.
+Architecture without a pair is allowed and explicitly reports **lint contract:
+unrecorded**. A recorded pair is **not installed-runtime verification**. See
+[recorded lint pairing](docs/installed-mode.md#optional-recorded-lint-pairing) for
+source verification and export steps; guidance never runs Dart or installs a linter.
+
+### Record and check the connection
+
+Commit **`.flutter-guidelines-installed.json`** through your normal review
+process. It records package version, payload, complete export, controller and profile
+fingerprints, without machine paths. The local immutable export, connection
+record and client integration files are ignored. Another machine installs the
+same exact package and runs `install` against the checked-in pin. A different
+package refuses injection and reports the mismatch; it never rewrites the pin.
+
+Restart selected clients once after connection. In each client, check that the
+injected identity matches `status`, and check native folder-guide loading in two
+different folders. Presence of a plugin file alone does not prove delivery.
 
 ```sh
-flutter-guidelines install --repo "$PROJECT"
-flutter-guidelines install --repo "$PROJECT" --apply
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines status --repo "$PROJECT"
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines doctor --repo "$PROJECT" --expected IDENTITY_SHA256
 ```
 
-By default this connects both agents. Add `--runtime claude` or `--runtime opencode` to both commands if you use only one.
+`--expected` checks an independently retained project identity, suitable for the
+reviewer. Installed-mode `doctor` is offline verification; it does not launch
+product commands. Runtime warnings continue the conversation without fresh
+guidance injection. Instructions already delivered remain in existing contexts.
 
-**Quit and restart the selected agents after installation.** From then on, open them normally in the project root. You do not need to activate the Python environment, use a special launcher or supply a task ID each time.
+## 3. Updates are explicit
 
-### Check the connection
+**"The Flutter guidelines package changed; review it" means review, not update.**
+The agent should identify the current delivery mode, guidance pin, selected profile,
+resolved linter and effective local configuration; inspect an identified candidate;
+then report changes, affected local contracts and the proposed update/migration.
+It must not upgrade packages, rewrite pins, switch profiles or close work merely
+because a review was requested. A push is neither a registry release nor an
+installed update. [The agent checklist](docs/project-workflow.md#agent-update-review)
+defines this workflow, including legacy installations.
 
-After restarting, make these checks in each selected client:
-
-1. Ask the agent to identify the injected public source, resolved revision and snapshot identity from its received context. Compare them with the status below; the presence of a plugin file alone does not prove injection.
-2. If your project has folder-local instructions, ask the agent to read a source file in that folder before explicitly reading its guide, and report whether the applicable instructions arrived automatically. Repeat for a different folder. Check `AGENTS.md` loading and `CLAUDE.md` imports separately where applicable.
-3. Inspect the installed connection and active work from your tools environment:
-
-   ```sh
-   flutter-guidelines doctor --repo "$PROJECT"
-   flutter-guidelines status --repo "$PROJECT"
-   ```
-
-These checks establish initial connection behavior, not the whole work lifecycle. To verify review and closure, use the same work identity in both sessions and observe `end`, session exit and final archival as described in [Runtime details](docs/runtime.md#work-lifecycle). Validate your project's lint/test commands separately, including their failure paths.
-
-### If the project already loads other guidelines
-
-The installer stops when it finds a competing instruction loader. Review that connection before replacing it; do not run two shared rule catalogs together.
-
-Existing protection hooks also need review, rather than deletion. `inventory-hooks` lists Claude hooks; `review-guard` can record approval for an exact non-instruction protection hook. See [Runtime details](docs/runtime.md), section "Installation", before using that approval command.
-
-## 3. Use it day to day
-
-| Situation | What happens |
-|---|---|
-| First session in a new work unit | Downloads guidelines and records the version automatically. |
-| Another session or reviewer joins | Uses the same guidelines and project-policy snapshot. |
-| A newer Git commit appears | Reports `UPDATE`; existing work keeps its version. |
-| An update check cannot reach the source | Reports `UNKNOWN`; an existing verified snapshot can continue. First preparation needs a successful download. |
-| Runtime verification fails | Continues conversation without new guideline injection and shows a warning; protected-state write guards remain active. |
-| Project-local policies change | Requires explicit human rebaseline before closure/acceptance; reads and ordinary edits continue. |
-
-With automatic updates approved, first preparation includes the controller and versioned adapters as well as the documents. If channel resolution or preparation fails, conversation continues with a warning and no new verified work. An existing work can continue from its verified deployment and snapshot offline; its freshness is reported as `UNKNOWN` when it cannot be checked. A cached fixed revision can also prepare new work offline. See [Automatic updates](docs/automatic-updates.md) for version selection, rollback, recovery and client limits.
-
-To inspect the current work or check for updates, use the installed CLI from an activated tools environment, or its full path:
+Git pushes and conversations do nothing to version selection. Install the new
+owner-approved package into the tools environment (or a new tools environment),
+then preview and apply the project change using that new executable:
 
 ```sh
-flutter-guidelines status --repo "$PROJECT"
-flutter-guidelines refresh-check --repo "$PROJECT"
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines upgrade-installed --repo "$PROJECT"
+/absolute/tools/flutter-guidelines/bin/flutter-guidelines upgrade-installed --repo "$PROJECT" --apply
 ```
 
-**When both implementation and review are finished and accepted**, ask the agent to run:
+This shows the old and new exact pins, creates a new immutable export, and
+refreshes the owned connection to the selected interpreter. It never installs a
+package or updates an executable itself. Review and commit the changed pin;
+restart affected clients and reload contexts before the next work/review cycle.
+Old exports are retained, never edited. Keep exact wheels available for matching
+other machines or rollback. See [Installed mode](docs/installed-mode.md).
+
+An update does not require changing the linter if its existing contract remains
+compatible. If executable rules/options change, separately update the locked lint
+dependency and local configuration, run the approved project checks, and refresh
+any recorded pair before accepting the new combination. No CLI here installs Dart
+dependencies or copies a lint profile into your project.
+
+Omitting profile options preserves the current choice during configure or upgrade.
+Changing profiles requires explicit `upgrade-installed --profile architecture`
+(preview, then `--apply`); use `upgrade-installed --clear-profiles` to return to
+generic guidance. Re-running configure cannot silently change an existing choice.
+
+## Coexistence, removal and legacy migration
+
+The installer preserves unrelated settings and ordinary tool guards. It inventories
+only the selected clients, so unused-client configuration does not block a
+single-client connection. It reports
+possible competing entry loaders and OpenCode instruction/plugin configuration
+for explicit inventory rather than silently ignoring them. Native local
+instruction files remain native; they are not frozen into a global policy list.
+No content-matching write/execute guard is installed by this mode.
+
+To remove just the connection, preview and apply `uninstall --repo "$PROJECT"`.
+It removes the owned hooks/plugin while preserving unrelated settings, the pin,
+exports and ignore entries. Modified owned hooks/plugins require inspection.
+No work closure is needed in installed mode.
+
+**Existing installations are legacy and are not migrated automatically.** Their
+work/lease behavior is unchanged. With the original installed CLI, finish and
+close the work, exit/release sessions, and preview/apply legacy `uninstall`.
+Then explicitly archive/remove the old `.flutter-guidelines.json` configuration
+before configuring installed mode. Do not edit a live legacy snapshot. See the
+[migration procedure](docs/installed-mode.md#legacy-migration).
+
+Legacy source selection and `--auto-update` remain explicit compatibility paths:
+[Legacy runtime](docs/runtime.md), [automatic updates](docs/automatic-updates.md).
+The [artifact task API](docs/task-api.md) retains its task identity contract.
+
+## Verification and limits
+
+Installed-mode Python subprocess tests and a direct Node adapter harness verify
+offline delivery, portable identity, mismatch/tamper/path rejection, explicit
+upgrade, guard coexistence and removal. The new mode still needs installed-client
+interactive trials in Claude Code and OpenCode: entry delivery, warning display,
+resume/compaction and native folder scope are not established by configuration or
+simulated hook tests. There are no release-event or shutdown semantics to verify
+for this mode. Test only Python versions and platforms actually available.
 
 ```sh
-flutter-guidelines end --repo "$PROJECT"
+.build-env/bin/python tests/check_distribution.py
 ```
 
-This marks the work as closing. Existing sessions can finish, new sessions cannot join, and the work is archived after the last session releases its connection. Then start a new conversation for the next work unit.
+This builds wheel/sdist, verifies exact resources and notices, installs cleanly,
+and runs tests outside the checkout. `inspect`, `export PARENT`, and `verify
+SNAPSHOT --digest SHA256` remain standalone content operations. They do not
+activate a consumer. Read-only files discourage accidental edits, not hostile
+same-user processes.
 
-Closing a window or leaving an agent idle does not count as accepting the work. If a client crashes and leaves a connection recorded, inspect it before using the recovery command `release`. The [runtime contract](docs/runtime.md), section "Work lifecycle", explains this boundary and the native behavior still requiring trial verification.
-
-Compatible controllers and versioned adapters update automatically for future work in automatic-update mode. The stable bootstrap environment remains installed and unchanged. Upgrading that bootstrap or its Python interpreter is an explicit migration: close affected work, exit sessions, uninstall the old integration and install the replacement connection.
-
-### Source updates and package releases
-
-This repository is already a Python package: `flutter-agent-guidelines` installs the `flutter-guidelines` command. The installation above builds a local wheel; there is no registry release to install yet. It is tooling for your agent, not a Dart or Flutter application dependency.
-
-A Git push makes source changes available. In automatic-update mode, future work follows the approved ref for content, Python and compatible versioned adapters; active work keeps its entire deployment. Legacy content-only installations still require manual controller updates. Publishing a versioned package to a registry is a separate release action.
-
-## Remove the project connection
-
-Preview first, then restore the files owned by the installation:
-
-```sh
-flutter-guidelines uninstall --repo "$PROJECT"
-flutter-guidelines uninstall --repo "$PROJECT" --apply
-```
-
-Close the work and exit its sessions first. If an owned file has since been edited, uninstall stops and keeps its backup for inspection. Project configuration, saved snapshots and cache remain available; the tool does not delete them automatically.
-
-## For agents and maintainers
-
-- **Project agents:** use the injected guidelines root and work identity. Read only the relevant guidance and local policies. Reviewer sessions must share that identity; `join --expected DIGEST` provides an explicit check. Mark work closing only after acceptance; do not reset state to obtain newer rules.
-- **Repository maintainers:** follow [AGENTS.md](AGENTS.md). The [consumer entry](src/flutter_agent_guidelines/payload/AGENTS.md) is the single starting page shipped with the package.
-- **Runtime behavior and commands:** [Runtime details](docs/runtime.md) covers configuration, hook review, installation, failure handling and recovery.
-- **Python automation:** [Artifact task API](docs/task-api.md) describes the separate stable-release artifact interface. Its release requirement does not prevent explicitly approved Git-source trials.
-- **Standalone content:** `inspect` lists installed content; `export PARENT` saves a snapshot into an existing directory; `verify SNAPSHOT --digest SHA256` checks it against a separately retained fingerprint. These operations do not activate an agent connection.
-
-Automatic-update mode fetches and executes allowlisted Python and adapter files only from the explicitly approved source, without running setup/build hooks or downloading dependencies. Legacy content-only mode fetches Markdown and notices only. File fingerprints detect differences; source approval is still the owner's decision. Read-only files and tool guards discourage accidental writes, not hostile processes running as the same user.
-
-### Run the package checks
-
-From this tools repository, with the build environment installed:
-
-```sh
-.venv/bin/python tests/check_distribution.py
-```
-
-This builds the source distribution and wheel in a temporary directory, checks packaged resources, installs the wheel cleanly and runs the tests outside the checkout. `tests/native_smoke.py` additionally probes installed agent configuration without making a model call. Real consumer behavior, other operating systems and the minimum Python version require their own checks.
+Maintainers follow [AGENTS.md](AGENTS.md). The canonical consumer entry is
+[payload/AGENTS.md](src/flutter_agent_guidelines/payload/AGENTS.md).
 
 ## License
 
-Apache-2.0 for authorized original material. See [LICENSE](LICENSE), [NOTICE](NOTICE), [Third-party notices](THIRD_PARTY_NOTICES.md) and [Provenance](provenance/README.md). Upstream documentation is linked, not copied or relicensed. Flutter/Dart names do not imply official endorsement.
+Apache-2.0 for authorized original material. See [LICENSE](LICENSE), [NOTICE](NOTICE),
+[Third-party notices](THIRD_PARTY_NOTICES.md) and [Provenance](provenance/README.md).
+Third-party guidance is linked, not copied or relicensed. Flutter/Dart names do
+not imply official endorsement.

@@ -7,7 +7,7 @@ from .snapshots import SnapshotError, canonical, digest, file_hashes, write_snap
 DISTRIBUTION = "flutter-agent-guidelines"
 PAYLOAD = (
     "AGENTS.md", "decisions/boundaries.md", "decisions/reliability.md",
-    "procedures/verification.md", "references/upstream.md",
+    "procedures/verification.md", "references/upstream.md", "profiles/architecture.md",
 )
 NOTICES = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "provenance/README.md")
 

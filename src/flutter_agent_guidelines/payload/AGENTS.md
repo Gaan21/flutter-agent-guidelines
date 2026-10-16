@@ -6,8 +6,8 @@ written engineering rules are not analyzer or operating-system enforcement.
 ## Authority and task identity
 
 - Read consumer authority and concrete task preloads first. Consumer security, ownership and approved architecture govern implementation.
-- Use one verified task manifest for implementation and review: full common-content revision and hashes, consumer identity, local-policy/overlay snapshot and hashes, external contract pins, toolchain/configuration identity, and role join records. A local cache path is not an identity.
-- Reviewer joins the existing manifest; never independently resolves latest. Announce available updates without replacing live bytes. Changed policy or controls require explicit rebaseline agreement and renewed validation. Unverifiable new preparation blocks affected work.
+- Implementation and review use the same project revision and verified guidance identity. Installed-version delivery uses the project pin and its selected profiles; it does not require work leases, `end` or policy rebaseline. Package updates are explicit, between review cycles, with affected contexts reloaded. A cache path or version label alone is not an identity.
+- Artifact-task and legacy work delivery retain their manifest contract: common revision/bundle, consumer and policy/overlay hashes, toolchain/configuration and role joins. Review joins that manifest without independently resolving latest. Explicit rebaseline applies only to delivery modes that snapshot local policy. Never replace live snapshot bytes.
 - Load the relevant decision below, then its applicable procedure. Stop reference traversal once the decision is resolved. Missing required consumer contracts block only affected implementation; record the gap rather than inventing APIs.
 - Preserve installed interfaces. Common recommendations do not authorize relaxing an existing consumer rule, suppression, test baseline or operational limit.
 
@@ -16,6 +16,7 @@ written engineering rules are not analyzer or operating-system enforcement.
 - [Engineering boundaries](decisions/boundaries.md): data/serialization, failure visibility, dependency lifetimes, immutable values, time, UI state/effects, identity and localization.
 - [Reliability](decisions/reliability.md): owned resources, overlays, critical completion, concurrency, retries and conditional offline behavior.
 - [Verification procedures](procedures/verification.md): scoped workflow, behavioral checklist, control evidence and truthful closeout.
+- [Selected architecture profile](profiles/architecture.md): read when selected by the project connection or local authority; strict names/member order, selective typing and the matching lint selection. Availability alone does not activate it.
 - [Upstream index](references/upstream.md): optional topic references; no recursive required reading.
 
 Prefer clear responsibilities and explicit boundary conversions. Choose domain layers, usecases, code generators and containers according to the consumer architecture. No universal base hierarchy, storage protocol or component API is prescribed here.

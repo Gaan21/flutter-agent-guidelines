@@ -1,6 +1,9 @@
-# Automatic local runtime
+# Legacy automatic local runtime
 
-For installation and an initial connection check, start with the [README](../README.md#check-the-connection). This page describes the detailed runtime contract; implementation descriptions are not evidence of native client dispatch. See the [validation status](../README.md#what-is-available-today) for the scope of completed checks.
+For new connections, use [installed-version delivery](installed-mode.md) and the
+[README](../README.md). This page describes the retained legacy work/lease runtime;
+implementation descriptions are not evidence of native client dispatch. Existing
+installations keep this behavior until explicitly migrated.
 
 ## Terms
 

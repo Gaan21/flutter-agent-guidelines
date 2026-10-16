@@ -74,6 +74,9 @@ def doctor(repo):
 
 def configure(repo, source, policies, overlays, cache=None, apply=False, auto_update=False):
     repo = consumer_root(repo)
+    from . import installed
+    if installed.enabled(repo):
+        raise SnapshotError("installed project pin exists; explicitly disconnect and archive it before legacy configuration")
     validate_source(source)
     validate_paths(policies)
     validate_paths(overlays)

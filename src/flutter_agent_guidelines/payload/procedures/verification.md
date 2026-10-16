@@ -4,10 +4,10 @@ Packaged procedures specify work and evidence, not installed commands.
 
 ## Start and route
 
-1. Read consumer authority and task preloads. Confirm common-content and private-overlay identity against the same manifest used by review; no independent latest lookup.
+1. Read consumer authority and task preloads. Confirm the same project revision, guidance identity and selected profiles as review. For manifest-based delivery also compare policy/overlay identity; no independent latest lookup.
 2. Identify changed boundary and owners. For data/error/time/UI work read [boundaries](../decisions/boundaries.md); for lifecycle/async/offline read [reliability](../decisions/reliability.md).
 3. Read the relevant consumer API/decision and inspect installed interfaces. Record conflicts or missing contracts before affected implementation. Use [upstream references](../references/upstream.md) only for the unresolved topic.
-4. Select a bounded patch and approved validation commands for an explicit consumer/package root. Preserve local scope limits and checkpoints. This guide supplies no activated hooks or generic shell gate.
+4. Inspect the effective lint registrations, selection, options, include chain and severities before editing. Read the activated profile sections relevant to the task. A configuration key alone does not prove a rule runs. Select a bounded patch and approved validation commands for an explicit consumer/package root; preserve local limits and checkpoints.
 5. Implement one responsibility at a time; verify changed behavior at the simplest sufficient test layer. Keep snippets small; use actual shared components instead of cloning tutorial implementations.
 
 ## Behavior and risk checklist
@@ -25,7 +25,7 @@ Select applicable cases and record why others do not apply. This guidance sets n
 
 Use deterministic doubles/time for isolated tests. Real router or in-memory database collaboration may warrant integration coverage; classify effects explicitly. Install listeners before actions, bound waits, reset shared fixtures and dispose resources. Review runtime and redundancy rather than omitting distinct risks to fit a test cap. Golden baselines need a stable environment and reviewed differences; no blanket retrofit required.
 
-For widget interaction targets, prefer finders in order: key, type, icon, text; use text when copy/localization is the behavior under test. Use bounded `pump` steps with controlled time for periodic timers or ongoing animations; reserve `pumpAndSettle` for work that can settle. Await observable conditions with an explicit frame/time limit and a useful failure message.
+For widget interaction targets, choose stable, unambiguous finders appropriate to the behavior; keys, types and icons can avoid incidental copy coupling, while text is appropriate when copy/localization is under test. Preserve any stricter project finder policy. Use bounded `pump` steps with controlled time for periodic timers or ongoing animations; reserve `pumpAndSettle` for work that can settle. Await observable conditions with an explicit frame/time limit and a useful failure message.
 
 Run an E2E matrix only on explicit user request, using the verified consumer harness, fixtures, bounded waits and cleanup/post-check contract. Do not infer platform/driver support from a generic tutorial.
 
@@ -54,5 +54,21 @@ Verify a gate using clean input, known violation, crash, missing SDK/config/pack
 - Use locked toolchains; generation only when required. Never infer an upgrade requirement from a documentation page's SDK label.
 - Review semantic names, cohesion and boundary direction. Formatter output does not settle architecture or API conventions. Declaration-sensitive style changes require approved consumer policy and installed-control evidence; resource-field typing remains protected until cleanup detection is sufficient.
 - Record exceptions, approval, covering evidence and recovery obligations required by the consumer. Do not add suppressions/exclusions as a default fix.
-- Return exact changed files, checks, unresolved contracts and residual risk to review under the same manifest. Propose shared changes separately; no snapshot edits, automatic Git actions or publication.
+- Return exact changed files, checks, unresolved contracts and residual risk under the same verified guidance identity (and task manifest where applicable). Record the installed lint revision and effective selection alongside it; compatible version labels alone do not prove agreement. Propose shared changes separately; no snapshot edits, automatic Git actions or publication.
 - Maintain concise English, file/section citations and per-file provenance. Link upstream instead of copying tutorials; preserve upstream recommendation strength. Historical status and efficacy claims need evidence.
+
+## Reviewing guidance updates
+
+- An owner request to review a changed guidance package means inspect and report,
+  not install, change pins/profiles, close work or publish. First identify installed
+  versus legacy delivery and the current guidance identity, resolved lint dependency,
+  effective options/severities and local contracts.
+- Compare against one exact candidate revision/release, shared with review. Classify
+  content, executable, lint, policy and migration changes. Report effects on selected
+  rules and product contracts, proposed validation and rollback before applying.
+- Profiles express reusable conventions, not product identities. Product-specific
+  choices come from native root/folder instructions and effective configuration;
+  do not infer them from repository names or copy another product's APIs.
+- Preserve existing local selections during updates. The optional recorded pair
+  validates the stock architecture selection, not arbitrary project deviations or
+  executed lints. Check the actual dependency/configuration independently.
