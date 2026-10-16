@@ -1,5 +1,20 @@
 # Automatic local runtime
 
+For installation and an initial connection check, start with the [README](../README.md#check-the-connection). This page describes the detailed runtime contract; implementation descriptions are not evidence of native client dispatch. See the [validation status](../README.md#what-is-available-today) for the scope of completed checks.
+
+## Terms
+
+| Term | Meaning |
+|---|---|
+| Work unit / work identity | Implementation and review sharing one fixed set of inputs until explicit closure. A new conversation does not automatically create a new work unit. |
+| Snapshot | Saved, integrity-checked copies of the common guidance and declared local policies/overlays for that work. |
+| Digest | A content fingerprint used to compare identities and detect changes; it does not establish publisher trust. |
+| Policy | A declared project instruction file. Its original path and native scope remain significant. |
+| Overlay | An explicitly declared project-specific input routed globally from its pinned copy. |
+| Lease | A runtime record of a participating session. An exited or crashed session may need explicit operator-confirmed release. |
+| Controller / adapter | Installed executable tooling / client integration that calls it. These are updated separately from fetched Markdown guidance. |
+| Rebaseline | Explicit preparation of a replacement work identity after local-policy changes, preserving the common-source revision and requiring renewed validation. |
+
 ## Authority and configuration
 
 One Flutter authority plus consumer-local policies. Installed Python controls execution;
