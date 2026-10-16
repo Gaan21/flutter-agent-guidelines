@@ -6,7 +6,7 @@ import os
 import re
 import sys
 
-from .runtime import configuration, controller_identity, join, lifecycle
+from .runtime import PolicyDrift, configuration, controller_identity, join, lifecycle, mark_rebaseline
 from .runtime_io import discover, state_root
 from .snapshots import SnapshotError, digest, regular_bytes
 
@@ -64,19 +64,22 @@ def guard(repo, name, arguments, cwd=None):
                 raise SnapshotError("tool write/execute target is protected runtime state")
 
 
-def handle(runtime, payload):
+def verified_handle(runtime, payload):
     repo = discover(payload.get("cwd") or "")
+    if runtime == "claude" and payload.get("hook_event_name") == "SessionEnd":
+        if not payload.get("agent_id"):
+            lifecycle(repo, "release", runtime, payload["session_id"], "process-" + str(os.getppid()))
+        return {}
+    if runtime == "opencode" and payload.get("event") == "release":
+        if not payload.get("lease"):
+            raise SnapshotError("OpenCode adapter instance lease required")
+        return lifecycle(repo, "release", runtime, payload.get("session_id"), payload["lease"])
     verify_adapter(repo, payload)
     configuration(repo)
     if runtime == "claude":
         event = payload["hook_event_name"]
         session = payload["session_id"]
         lease = "process-" + str(os.getppid())
-        # Child events carry the parent session_id; do not release its lease.
-        if event == "SessionEnd":
-            if not payload.get("agent_id"):
-                lifecycle(repo, "release", runtime, session, lease)
-            return {}
         normalized = {"SessionStart": "prompt", "UserPromptSubmit": "prompt",
                       "PreToolUse": "tool"}.get(event)
         if normalized is None:
@@ -89,16 +92,12 @@ def handle(runtime, payload):
             raise SnapshotError("OpenCode adapter instance lease required")
         if normalized == "doctor":
             return {"controller": controller_identity()}
-        if normalized == "release":
-            return lifecycle(repo, "release", runtime, session, lease)
     mode = ("entry" if (runtime == "claude" and event == "SessionStart") or
             (runtime == "opencode" and normalized == "verify") else
             "provenance" if runtime == "claude" and event == "UserPromptSubmit" else "none")
     result = join(repo, runtime, session, payload.get("role", "participant"),
                   payload.get("expected"), normalized == "prompt",
                   payload.get("adapter_hash") or controller_identity()["digest"], lease, mode)
-    if normalized == "tool":
-        guard(repo, payload.get("tool_name", ""), payload.get("tool_input", {}), payload.get("cwd"))
     if runtime != "claude":
         return result
     if event == "PreToolUse":
@@ -107,12 +106,39 @@ def handle(runtime, payload):
                                    "additionalContext": result["context"]}}
 
 
+def handle(runtime, payload):
+    repo = discover(payload.get("cwd") or "")
+    tool = (payload.get("hook_event_name") == "PreToolUse" if runtime == "claude"
+            else payload.get("event") == "tool")
+    if tool:
+        guard(repo, payload.get("tool_name", ""), payload.get("tool_input", {}), payload.get("cwd"))
+    try:
+        return verified_handle(runtime, payload)
+    except (SnapshotError, OSError, ValueError, KeyError, TypeError) as error:
+        if isinstance(error, PolicyDrift):
+            try:
+                mark_rebaseline(repo)
+            except (SnapshotError, OSError, ValueError, KeyError, TypeError) as state_error:
+                print(f"Flutter rebaseline status could not be saved: {state_error}", file=sys.stderr)
+        warning = f"Flutter guidelines unavailable; no context injected: {error}"
+        if isinstance(error, PolicyDrift):
+            warning += "; rebaseline required before closure/acceptance"
+        print(warning, file=sys.stderr)
+        if runtime == "claude":
+            return {"systemMessage": warning}
+        return {"warning": warning}
+
+
 def hook(runtime):
+    payload = {}
     try:
         payload = json.load(sys.stdin)
         print(json.dumps(handle(runtime, payload)))
         return 0
     except (SnapshotError, OSError, ValueError, KeyError, TypeError) as error:
         print(f"flutter-guidelines: {error}", file=sys.stderr)
-        # Claude exit 2 blocks prompts/tools; SessionStart additionally uses onFailure:block.
+        if runtime == "claude" and payload.get("hook_event_name") in (
+                "SessionStart", "UserPromptSubmit"):
+            print(json.dumps({"systemMessage": f"Flutter guidelines unavailable; no context injected: {error}"}))
+            return 0
         return 2

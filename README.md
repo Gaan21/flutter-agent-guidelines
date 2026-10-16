@@ -21,7 +21,7 @@ The saved copy is called a **snapshot**. It records the exact Git commit and fil
 
 - **Development version:** `0.1.0.dev0`, available as source on GitHub and buildable locally. Not published to PyPI, npm, GitHub Packages or pub.dev.
 - **Implemented:** local Claude Code/OpenCode integration, automatic snapshots, shared implementation/review identity, update notices and reversible installation.
-- **Verified:** 37 automated tests, clean package installation and OpenCode plugin discovery. Tested on macOS arm64 with Python 3.14.8, Claude Code 2.1.301 and OpenCode 1.19.0.
+- **Verified:** 42 automated tests and clean package installation on macOS arm64 with Python 3.14.8. Earlier configuration probes used Claude Code 2.1.301 and OpenCode 1.19.0; native dispatch of the recovery behavior still requires trial verification.
 - **Next:** controlled use in a real Flutter project, including actual session startup, review and shutdown. Configuration probes and simulated hook events do not prove the whole interactive lifecycle.
 
 This tool loads written guidance. Your project's analyzer, lints and tests still check its code separately.
@@ -95,7 +95,8 @@ Existing protection hooks also need review, rather than deletion. `inventory-hoo
 | Another session or reviewer joins | Uses the same guidelines and project-policy snapshot. |
 | A newer Git commit appears | Reports `UPDATE`; existing work keeps its version. |
 | An update check cannot reach the source | Reports `UNKNOWN`; an existing verified snapshot can continue. First preparation needs a successful download. |
-| Saved guidelines or project instructions change unexpectedly | Stops affected operations so the mismatch can be investigated. |
+| Runtime verification fails | Continues conversation without new guideline injection and shows a warning; protected-state write guards remain active. |
+| Project-local policies change | Requires explicit human rebaseline before closure/acceptance; reads and ordinary edits continue. |
 
 To inspect the current work or check for updates, use the installed CLI from an activated tools environment, or its full path:
 

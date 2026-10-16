@@ -187,7 +187,9 @@ class RuntimeTests(unittest.TestCase):
         value = json.loads(before)
         self.assertEqual(value["permissions"], {"deny": ["Bash(rm *)"]})
         self.assertEqual(value["hooks"]["PostToolUse"], json.loads(original)["hooks"]["PostToolUse"])
-        self.assertEqual(value["hooks"]["SessionStart"][0]["hooks"][0]["onFailure"], "block")
+        self.assertEqual(value["hooks"]["SessionStart"][0]["hooks"][0]["onFailure"], "continue")
+        self.assertEqual(value["hooks"]["UserPromptSubmit"][0]["hooks"][0]["onFailure"], "continue")
+        self.assertEqual(value["hooks"]["PreToolUse"][0]["hooks"][0]["onFailure"], "block")
         settings.write_bytes(before + b" ")
         with self.assertRaises(SnapshotError):
             installation.uninstall(self.repo, True)
@@ -245,8 +247,10 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse(read_json(self.repo / ".flutter-guidelines/work.json")["sessions"])
         (self.repo / "AGENTS.md").write_text("drift")
         failed = self.hook("UserPromptSubmit")
-        self.assertEqual(failed.returncode, 2)
+        self.assertEqual(failed.returncode, 0)
         self.assertIn("drift", failed.stderr)
+        self.assertIn("systemMessage", json.loads(failed.stdout))
+        self.assertNotIn("additionalContext", failed.stdout)
 
     def test_alias_targets_and_live_adapter_mismatch(self):
         first = self.join(adapter="first")

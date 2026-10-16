@@ -33,7 +33,7 @@ def main():
     print(f"Proof directory: {temporary}", flush=True)
     source = temporary / "source"
     source.mkdir()
-    for name in ("pyproject.toml", "MANIFEST.in", "README.md", "AGENTS.md", *NOTICES):
+    for name in ("pyproject.toml", "MANIFEST.in", "README.md", "AGENTS.md", "CHANGELOG.md", *NOTICES):
         destination = source / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(repository / name, destination)

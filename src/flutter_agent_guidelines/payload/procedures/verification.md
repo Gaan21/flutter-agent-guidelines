@@ -25,6 +25,8 @@ Select applicable cases and record why others do not apply. This guidance sets n
 
 Use deterministic doubles/time for isolated tests. Real router or in-memory database collaboration may warrant integration coverage; classify effects explicitly. Install listeners before actions, bound waits, reset shared fixtures and dispose resources. Review runtime and redundancy rather than omitting distinct risks to fit a test cap. Golden baselines need a stable environment and reviewed differences; no blanket retrofit required.
 
+For widget interaction targets, prefer finders in order: key, type, icon, text; use text when copy/localization is the behavior under test. Use bounded `pump` steps with controlled time for periodic timers or ongoing animations; reserve `pumpAndSettle` for work that can settle. Await observable conditions with an explicit frame/time limit and a useful failure message.
+
 Run an E2E matrix only on explicit user request, using the verified consumer harness, fixtures, bounded waits and cleanup/post-check contract. Do not infer platform/driver support from a generic tutorial.
 
 ## Control evidence

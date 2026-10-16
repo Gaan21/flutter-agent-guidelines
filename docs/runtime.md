@@ -25,7 +25,7 @@ Paths are consumer-relative regular files; existing top-level instruction files
 must be listed as policies. Policies retain local authority and are drift-checked;
 overlays are read from pinned copies. No generic central catalog is loaded.
 `configure` discovers native `AGENTS.md`, `CLAUDE.md` and `.claude/rules/**/*.md`
-into the explicit policy list; newly discovered files block existing pins.
+into the explicit policy list; newly discovered files require explicit rebaseline.
 Generated/dependency directories (`.git`, runtime state, `.dart_tool`, `.venv`,
 `node_modules`, `build`, `__pycache__`) are excluded from discovery. Their policies,
 if intentionally used, must be listed explicitly. External delegates are refused.
@@ -59,6 +59,8 @@ are promoted to global instructions.
 - `status --repo ROOT`: inspect verified work identity and leases.
 - `refresh-check --repo ROOT`: report CURRENT, UPDATE or UNKNOWN; never move pin.
 - `end --repo ROOT`: mark closing; finalize only after all leases release.
+- `rebaseline --repo ROOT [--apply]`: plan/prepare replacement local-policy identity
+  from the existing common-source revision after all sessions exit and release.
 - `release --repo ROOT --runtime NAME --session ID`: explicit lease release after
   confirming that session has exited; crash recovery is operator-owned.
 - `doctor --repo ROOT`: configuration, installed controller and executable probes.
@@ -94,7 +96,9 @@ before reviewing its replacement; stale approvals are never silently refreshed.
 Backups and hashes record owned changes; modified files block uninstall rather
 than losing edits. No global settings, tool grants, staging or executable updates.
 Restart both clients after installation. Claude requires >=2.1.295 for
-`onFailure: block`. Runtime support must be established by actual-version probes.
+event-specific `onFailure`: prompt/start failures continue; tool-launch failures
+block because the protected-state guard could not run. Runtime support must be
+established by actual-version probes.
 Uninstall retains owner configuration, work history/snapshots and shared cache.
 Restore modified owned files from retained backups before retrying uninstall;
 backups are base64 bytes plus hashes in the installation record, never applied
@@ -120,8 +124,32 @@ and exit behavior remain trial checks. A returned `dispose` callback is directly
 callable in the harness, but native invocation/support is not established by the
 config probes and must not be relied on for release. Idle never releases leases.
 Concurrent instances retain independent leases. Crashes can require `release`.
-Controller/adapter changes during live work fail closed, including already-loaded
-adapter hashes. No automatic executable upgrade.
+Controller/adapter changes invalidate verified injection, including already-loaded
+adapter hashes. Protected-state write guards remain active. No automatic executable upgrade.
+
+### Local-policy rebaseline
+
+Creating, editing or removing local policies/overlays marks the work
+`rebaseline-required`. Conversation, reads and ordinary edits (including policy
+files) continue with a visible warning and no new guideline injection. `status`
+reports the phase; `end` refuses closure/acceptance even if the original policy is
+restored. Reviewers cannot join that work as verified. Acceptance remains pending;
+tool access is not an acceptance receipt.
+
+The human exits all participating sessions, confirms any remaining leases with
+`status`, and uses `release` only for sessions known to have exited. Then:
+
+```sh
+flutter-guidelines rebaseline --repo ROOT
+flutter-guidelines rebaseline --repo ROOT --apply
+```
+
+The plan lists discovered policies. Apply archives the previous identity, adds
+native policies to configuration and prepares a new work/snapshot identity with
+current local bytes. It copies verified common content from the old snapshot,
+without resolving a moving ref or editing the old snapshot. Implementation and
+review must rejoin the replacement digest and renew validation. Restart clients
+after adapter installation changes; rebaseline does not install adapters.
 
 ## Failure and integrity
 
@@ -129,11 +157,24 @@ First preparation needs successful remote resolution and exact-commit export.
 Live pins resume offline only after complete snapshot/policy/config/controller
 verification; failed update lookup reports UNKNOWN, never CURRENT. A moving ref
 only produces an update notice. Every prompt/tool guard repeats verification.
-Config drift, local policy drift, corrupt state, links, unexpected snapshot files
-or mismatched session identities block. Recovery requires operator inspection;
-state is never silently reset. Restore changed instructions/controller/config
-before release/closure; inspect corrupted state/backups manually. Read-only modes and tool guards discourage writes,
-including resolved alias targets; they are not an OS sandbox or shell parser.
+Verification failures disable new context injection and emit a visible warning:
+Claude uses `systemMessage`; OpenCode uses a warning toast with stderr fallback.
+Prompt/start callbacks continue, including OpenCode launcher/protocol failures;
+the system transform removes its prior entry before injecting verified content.
+Previously delivered conversation context cannot be retracted. Config drift,
+corrupt state, links, unexpected snapshot files and identity mismatches remain
+verification errors; state is never silently reset. Local-policy drift additionally
+requires the explicit rebaseline above. Other recovery requires operator inspection.
+The protected-target guard runs before verification; ordinary tool calls continue
+on verification failure while named writes/execution against state, configuration
+and installed adapters are refused. OpenCode retains a local guard if Python cannot
+launch; Claude PreToolUse launch failure blocks because no guard ran.
+Read-only modes and tool guards discourage writes, including resolved alias
+targets; they are not an OS sandbox or shell parser.
+Use `Read`/`read`, `Glob` or `Grep` to inspect snapshot/state paths. Bash commands
+mentioning protected paths, including `ls`, `cat`, `head` and `grep`, are
+conservatively treated as write/execute targets; shell quoting, substitutions,
+pipes and redirects are not classified as read-only.
 Normal restrictive permissions remain effective. Only the short entry and local
 policy snapshot paths enter context; decision documents remain focused lookups.
 

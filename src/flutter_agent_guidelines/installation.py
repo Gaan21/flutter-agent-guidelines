@@ -110,10 +110,10 @@ def review_guard(repo, source, fingerprint, non_instruction_guard=False, apply=F
         return {"apply": apply, "review": approval, "definition": candidates[0]}
 
 
-def claude_hook_group():
+def claude_hook_group(event="PreToolUse"):
     return {"hooks": [{"type": "command", "command": sys.executable,
                        "args": ["-I", "-m", "flutter_agent_guidelines.cli", "hook", "--runtime", "claude"],
-                       "onFailure": "block", "timeout": 120}]}
+                       "onFailure": "block" if event == "PreToolUse" else "continue", "timeout": 120}]}
 
 
 def conflicts(repo):
@@ -121,7 +121,7 @@ def conflicts(repo):
     claude_home = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
     opencode_home = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "opencode"
     # Conservative inventory: unknown instruction-injecting hooks/plugins require review.
-    reviews = configuration(repo).get("reviewed_guards", [])
+    reviews = configuration(repo, discover_policies=False).get("reviewed_guards", [])
     inventory = hook_inventory(repo)
     findings.extend(missing_reviews(inventory, reviews))
     for _, path in settings_sources(repo):
@@ -132,7 +132,7 @@ def conflicts(repo):
     for item in inventory:
         owned = (item["source"] == ".claude/settings.local.json" and
                  (state_root(repo) / "installation.json").exists() and
-                 {**item["selector"], "hooks": [item["handler"]]} == claude_hook_group())
+                 {**item["selector"], "hooks": [item["handler"]]} == claude_hook_group(item["event"]))
         if not owned and not guard_approved(item, reviews):
             findings.append(f"{item['source']}:{item['event']} sha256={item['digest']} "
                             f"({'review non-instruction guard' if item['approvable'] else 'not waivable'})")
@@ -191,7 +191,7 @@ def desired(repo, runtime):
         settings = read_json(path) if path.exists() else {}
         hooks = settings.setdefault("hooks", {})
         for event in EVENTS:
-            hooks.setdefault(event, []).append(claude_hook_group())
+            hooks.setdefault(event, []).append(claude_hook_group(event))
         changes[".claude/settings.local.json"] = canonical(settings)
     if runtime in ("both", "opencode"):
         template = resources.files("flutter_agent_guidelines").joinpath(

@@ -135,7 +135,9 @@ class RuntimeReviewTests(unittest.TestCase):
                 save_json(self.repo / ".claude/moved.json", original)
             save_json(path, value)
             result = self.fixture.hook("UserPromptSubmit")
-            self.assertEqual(result.returncode, 2, change)
+            self.assertEqual(result.returncode, 0, change)
+            self.assertIn("systemMessage", json.loads(result.stdout))
+            self.assertNotIn("additionalContext", result.stdout)
             self.assertIn(item["digest"], result.stderr)
             self.assertIn("missing/changed", result.stderr)
             with self.assertRaises(SnapshotError):

@@ -23,10 +23,10 @@ def main(argv=None):
     verify.add_argument("snapshot")
     verify.add_argument("--digest", help="independently retained expected manifest SHA-256")
     for name in ("configure", "install", "uninstall", "status", "refresh-check", "end", "release", "doctor", "join",
-                 "inventory-hooks", "review-guard"):
+                 "inventory-hooks", "review-guard", "rebaseline"):
         command = commands.add_parser(name)
         command.add_argument("--repo", required=True, type=Path)
-        if name in ("configure", "install", "uninstall", "review-guard"):
+        if name in ("configure", "install", "uninstall", "review-guard", "rebaseline"):
             command.add_argument("--apply", action="store_true")
         if name == "configure":
             command.add_argument("--source-url", required=True)
@@ -72,6 +72,8 @@ def main(argv=None):
         elif arguments.command == "join":
             result = runtime.join(arguments.repo, arguments.runtime, arguments.session,
                                   arguments.role, arguments.expected)
+        elif arguments.command == "rebaseline":
+            result = runtime.rebaseline(arguments.repo, arguments.apply)
         elif arguments.command in ("status", "refresh-check", "end", "release"):
             result = runtime.lifecycle(arguments.repo, arguments.command,
                 getattr(arguments, "runtime", None), getattr(arguments, "session", None))

@@ -24,7 +24,11 @@ def controller_identity():
             "digest": digest(canonical(file_hashes(files)))}
 
 
-def configuration(repo):
+class PolicyDrift(SnapshotError):
+    """Local authority changed; explicit preparation is required before acceptance."""
+
+
+def configuration(repo, discover_policies=True):
     repo = consumer_root(repo)
     config = read_json(repo / ".flutter-guidelines.json")
     if (not isinstance(config, dict) or type(config.get("schema")) is not int or
@@ -41,9 +45,9 @@ def configuration(repo):
             raise SnapshotError("; ".join(missing))
     if "cache" in config and (not isinstance(config["cache"], str) or not config["cache"]):
         raise SnapshotError("cache must be a nonempty path string")
-    for name in native_policies(repo):
+    for name in native_policies(repo) if discover_policies else ():
         if name not in config.get("policies", []):
-            raise SnapshotError(f"auto-loaded authority must be listed as policy: {name}")
+            raise PolicyDrift(f"auto-loaded authority must be listed as policy: {name}")
     return config
 
 
@@ -65,24 +69,29 @@ def load_work(repo):
     if (not isinstance(work, dict) or set(work) != {
             "schema", "id", "consumer", "phase", "source", "revision", "snapshot", "config",
             "local", "controller", "sessions", "update"} or work["schema"] != 1 or
-            work["phase"] not in ("active", "closing") or
+            work["phase"] not in ("active", "closing", "rebaseline-required") or
             not isinstance(work["sessions"], dict)):
         raise SnapshotError("invalid work record; inspect state, never reset silently")
     return work
 
 
-def verify_work(repo, work, config):
+def verify_work(repo, work, config, verify_local=True):
     require_digest(work["snapshot"])
     if work["consumer"] != str(consumer_root(repo)):
         raise SnapshotError("pinned work belongs to a different consumer worktree")
     if work["source"] != config["source"]:
         raise SnapshotError("source authority mismatch")
-    if work["config"] != digest(canonical(config)):
+    if verify_local and work["config"] != digest(canonical(config)):
         raise SnapshotError("configuration drift during pinned work")
     if work["controller"] != controller_identity():
         raise SnapshotError("installed controller changed during pinned work")
-    if work["local"] != file_hashes(local_files(repo, config)):
-        raise SnapshotError("local instruction drift during pinned work")
+    if verify_local:
+        try:
+            changed = work["local"] != file_hashes(local_files(repo, config))
+        except (OSError, SnapshotError) as error:
+            raise PolicyDrift(f"local instruction drift: {error}") from error
+        if changed:
+            raise PolicyDrift("local instruction drift during pinned work")
     snapshot = state_root(repo) / "snapshots" / work["snapshot"]
     manifest = verify_snapshot(snapshot, work["snapshot"])
     expected = {"consumer": work["consumer"], "source": work["source"], "revision": work["revision"],
@@ -98,6 +107,14 @@ def verify_work(repo, work, config):
         if session["snapshot"] != work["snapshot"] or session["work"] != work["id"]:
             raise SnapshotError("session identity mismatch")
     return snapshot
+
+
+def mark_rebaseline(repo):
+    with locked(state_root(repo)):
+        work = load_work(repo)
+        if work:
+            work["phase"] = "rebaseline-required"
+            save_json(state_root(repo) / "work.json", work)
 
 
 def update_check(work):
@@ -134,6 +151,15 @@ def provenance(work, snapshot):
 
 def join(repo, runtime, session, role="participant", expected=None, refresh=False,
          adapter=None, lease=None, context_mode="entry"):
+    try:
+        return _join(repo, runtime, session, role, expected, refresh, adapter, lease, context_mode)
+    except PolicyDrift:
+        mark_rebaseline(repo)
+        raise
+
+
+def _join(repo, runtime, session, role="participant", expected=None, refresh=False,
+         adapter=None, lease=None, context_mode="entry"):
     if context_mode not in ("entry", "provenance", "none"):
         raise SnapshotError("invalid context mode")
     if not isinstance(session, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,300}", session):
@@ -165,6 +191,8 @@ def join(repo, runtime, session, role="participant", expected=None, refresh=Fals
                     "local": file_hashes(local), "controller": controller,
                     "sessions": {}, "update": {"state": "CURRENT", "revision": revision}}
         snapshot = verify_work(repo, work, config)
+        if work["phase"] == "rebaseline-required":
+            raise PolicyDrift("rebaseline required before closure/acceptance")
         if expected and expected != work["snapshot"]:
             raise SnapshotError("explicit reviewer digest differs from active work")
         if work["phase"] == "closing" and key not in work["sessions"]:
@@ -200,11 +228,19 @@ def finalize(root, work):
 def lifecycle(repo, action, runtime=None, session=None, lease=None):
     root = state_root(repo)
     with locked(root):
-        config = configuration(repo)
+        config = configuration(repo, discover_policies=False)
         work = load_work(repo)
         if work is None:
             return {"work": None}
-        verify_work(repo, work, config)
+        verify_work(repo, work, config, verify_local=False)
+        try:
+            configuration(repo)
+            verify_work(repo, work, config)
+        except PolicyDrift:
+            work["phase"] = "rebaseline-required"
+            save_json(root / "work.json", work)
+        if action == "end" and work["phase"] == "rebaseline-required":
+            raise PolicyDrift("rebaseline required before closure/acceptance")
         if action == "refresh-check":
             work["update"] = update_check(work)
         elif action == "end":
@@ -216,3 +252,45 @@ def lifecycle(repo, action, runtime=None, session=None, lease=None):
                     del work["sessions"][key]
         closed = finalize(root, work)
         return {"work": work, "closed": closed}
+
+
+def rebaseline(repo, apply=False):
+    """Human-owned replacement preparation; keep the existing common-source revision."""
+    from .installation import conflicts
+    root = state_root(repo)
+    with locked(root):
+        config = configuration(repo, discover_policies=False)
+        work = load_work(repo)
+        if work is None:
+            raise SnapshotError("rebaseline requires existing work")
+        snapshot = verify_work(repo, work, config, verify_local=False)
+        if work["sessions"]:
+            raise SnapshotError("exit all sessions and release their leases before rebaseline")
+        findings = conflicts(repo)
+        if findings:
+            raise SnapshotError("competing/external loader requires inventory: " + ", ".join(findings))
+        config["policies"] = sorted(set(config.get("policies", [])) | set(native_policies(repo)))
+        local = local_files(repo, config)
+        result = {"apply": apply, "previous": work["snapshot"], "revision": work["revision"],
+                  "policies": config["policies"]}
+        if not apply:
+            return result
+        manifest = verify_snapshot(snapshot, work["snapshot"])
+        files = {name: regular_bytes(snapshot / name) for name in manifest["files"]
+                 if not name.startswith("local/") and name != "policy-index.json"}
+        identity = uuid.uuid4().hex
+        replacement = write_snapshot(root / "snapshots", {**files, **local,
+            "policy-index.json": canonical(policy_index(local))}, {
+            "consumer": work["consumer"], "source": work["source"], "revision": work["revision"],
+            "work": identity, "controller": work["controller"]})
+        history = checked_path(root / "history")
+        history.mkdir(exist_ok=True)
+        destination = checked_path(history / (work["id"] + ".json"))
+        if destination.exists():
+            raise SnapshotError("work history collision")
+        save_json(destination, work | {"phase": "rebaseline-required"})
+        save_json(repo / ".flutter-guidelines.json", config)
+        renewed = work | {"id": identity, "phase": "active", "snapshot": replacement.name,
+                          "local": file_hashes(local), "config": digest(canonical(config))}
+        save_json(root / "work.json", renewed)
+        return result | {"work": renewed}
