@@ -54,24 +54,33 @@ def probe(command):
 
 
 def doctor(repo):
-    configuration(repo)
+    config = configuration(repo)
     installed = (state_root(repo) / "installation.json").exists()
     if installed:
         from .adapters import verify_adapter
         verify_adapter(repo, {})
-    return {"controller": controller_identity(), "python": sys.version.split()[0],
-            "git": probe("git"), "claude": probe("claude"),
-            "opencode": probe("opencode"), "node": probe("node"),
-            "installation": "verified" if installed else "absent"}
+    result = {"controller": controller_identity(), "python": sys.version.split()[0],
+             "git": probe("git"), "claude": probe("claude"),
+             "opencode": probe("opencode"), "node": probe("node"),
+             "installation": "verified" if installed else "absent"}
+    result["mode"] = "automatic" if config.get("updates") else "content-only"
+    if config.get("updates") and load_work(repo):
+        from .bootstrap import command
+        work = command(repo, ["status", "--repo", str(repo)])["work"]
+        result["active_work"] = {"revision": work["revision"], "controller": work["controller"],
+                                 "snapshot": work["snapshot"]}
+    return result
 
 
-def configure(repo, source, policies, overlays, cache=None, apply=False):
+def configure(repo, source, policies, overlays, cache=None, apply=False, auto_update=False):
     repo = consumer_root(repo)
     validate_source(source)
     validate_paths(policies)
     validate_paths(overlays)
     config = {"schema": 1, "source": source,
-              "policies": sorted(set(policies) | set(native_policies(repo))), "overlays": overlays}
+               "policies": sorted(set(policies) | set(native_policies(repo))), "overlays": overlays}
+    if auto_update:
+        config["updates"] = {"protocol": 1}
     if cache:
         config["cache"] = str(checked_path(cache))
     path = checked_path(repo / ".flutter-guidelines.json")
@@ -80,7 +89,10 @@ def configure(repo, source, policies, overlays, cache=None, apply=False):
         if "reviewed_guards" in existing:
             config["reviewed_guards"] = existing["reviewed_guards"]
         if existing != config:
-            raise SnapshotError("configuration exists; edit explicitly after closing work")
+            if load_work(repo) or (state_root(repo) / "installation.json").exists():
+                raise SnapshotError("close work and uninstall integration before reconfiguring")
+            if apply:
+                save_json(path, config)
     elif apply:
         save_json(path, config)
     return {"apply": apply, "path": str(path), "configuration": config}
@@ -110,9 +122,9 @@ def review_guard(repo, source, fingerprint, non_instruction_guard=False, apply=F
         return {"apply": apply, "review": approval, "definition": candidates[0]}
 
 
-def claude_hook_group(event="PreToolUse"):
+def claude_hook_group(event="PreToolUse", managed=False):
     return {"hooks": [{"type": "command", "command": sys.executable,
-                       "args": ["-I", "-m", "flutter_agent_guidelines.cli", "hook", "--runtime", "claude"],
+                        "args": ["-I", "-m", "flutter_agent_guidelines.cli", "bridge" if managed else "hook", "--runtime", "claude"],
                        "onFailure": "block" if event == "PreToolUse" else "continue", "timeout": 120}]}
 
 
@@ -132,7 +144,8 @@ def conflicts(repo):
     for item in inventory:
         owned = (item["source"] == ".claude/settings.local.json" and
                  (state_root(repo) / "installation.json").exists() and
-                 {**item["selector"], "hooks": [item["handler"]]} == claude_hook_group(item["event"]))
+                  {**item["selector"], "hooks": [item["handler"]]} == claude_hook_group(
+                      item["event"], bool(configuration(repo, discover_policies=False).get("updates"))))
         if not owned and not guard_approved(item, reviews):
             findings.append(f"{item['source']}:{item['event']} sha256={item['digest']} "
                             f"({'review non-instruction guard' if item['approvable'] else 'not waivable'})")
@@ -181,7 +194,8 @@ def conflicts(repo):
 
 def desired(repo, runtime):
     changes = {}
-    launcher = [sys.executable, "-I", "-m", "flutter_agent_guidelines.cli", "hook"]
+    managed = bool(configuration(repo, discover_policies=False).get("updates"))
+    launcher = [sys.executable, "-I", "-m", "flutter_agent_guidelines.cli", "bridge" if managed else "hook"]
     if runtime in ("both", "claude"):
         version = probe("claude")
         match = re.search(r"(\d+)\.(\d+)\.(\d+)", version or "")
@@ -191,11 +205,11 @@ def desired(repo, runtime):
         settings = read_json(path) if path.exists() else {}
         hooks = settings.setdefault("hooks", {})
         for event in EVENTS:
-            hooks.setdefault(event, []).append(claude_hook_group(event))
+            hooks.setdefault(event, []).append(claude_hook_group(event, managed))
         changes[".claude/settings.local.json"] = canonical(settings)
     if runtime in ("both", "opencode"):
         template = resources.files("flutter_agent_guidelines").joinpath(
-            "adapters/opencode.js").read_text(encoding="utf-8")
+            "adapters/opencode-bootstrap.js" if managed else "adapters/opencode.js").read_text(encoding="utf-8")
         changes[".opencode/plugins/flutter-guidelines.js"] = template.replace(
             "__LAUNCHER__", json.dumps(launcher + ["--runtime", "opencode"])).encode()
     ignore = repo / ".gitignore"

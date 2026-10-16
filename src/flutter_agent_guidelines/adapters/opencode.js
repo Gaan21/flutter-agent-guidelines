@@ -1,20 +1,21 @@
-// Installed local adapter. No fetched source is executed.
+// Versioned runtime adapter; executable source requires explicit bootstrap approval.
 import { spawn, spawnSync } from "node:child_process";
 import { readFileSync, realpathSync } from "node:fs";
 import { resolve, dirname, basename, sep } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-const launcher = __LAUNCHER__;
+const launcher = typeof __LAUNCHER__ === "undefined" ? null : __LAUNCHER__;
 const filename = fileURLToPath(import.meta.url);
 const loadedHash = (() => {
   try { return createHash("sha256").update(readFileSync(filename)).digest("hex"); }
   catch { return "unavailable"; } // Defer failure to blocking hooks, not plugin construction.
 })();
 
-export default async ({ directory, worktree, client }) => {
+export default async ({ directory, worktree, client, flutterBridge }) => {
+  const command = flutterBridge?.launcher || launcher;
   const cwd = directory || worktree;
-  const repo = resolve(dirname(filename), "../..");
+  const repo = flutterBridge?.repo || resolve(dirname(filename), "../..");
   const physical = path => {
     try { return realpathSync(path); }
     catch {
@@ -46,14 +47,14 @@ export default async ({ directory, worktree, client }) => {
       await client?.tui.showToast({ body: { message, variant: "warning" } });
     } catch { /* Notification failure must not block a conversation. */ }
   };
-  const lease = randomUUID();
+  const lease = flutterBridge?.lease || randomUUID();
   const sessions = new Map();
   const request = (event, session, extra = {}) => ({
-    event, session_id: session, cwd, lease, adapter_hash: loadedHash,
-    adapter_path: filename, ...extra,
+    event, session_id: session, cwd, lease, adapter_hash: flutterBridge?.hash || loadedHash,
+    adapter_path: flutterBridge?.path || filename, ...extra,
   });
   const invoke = (payload) => new Promise((resolve, reject) => {
-    const child = spawn(launcher[0], launcher.slice(1), { shell: false });
+    const child = spawn(command[0], command.slice(1), { shell: false });
     let stdout = "", stderr = "";
     child.stdout.on("data", data => { stdout += data; });
     child.stderr.on("data", data => { stderr += data; });
@@ -85,7 +86,7 @@ export default async ({ directory, worktree, client }) => {
   // No async work on exit; idle is deliberately not a lifecycle boundary.
   process.once("exit", () => {
     for (const session of sessions.keys()) {
-      spawnSync(launcher[0], launcher.slice(1), {
+      spawnSync(command[0], command.slice(1), {
         input: JSON.stringify(request("release", session)), timeout: 10000,
         shell: false, stdio: ["pipe", "ignore", "ignore"],
       });

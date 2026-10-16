@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -23,10 +24,10 @@ def main(argv=None):
     verify.add_argument("snapshot")
     verify.add_argument("--digest", help="independently retained expected manifest SHA-256")
     for name in ("configure", "install", "uninstall", "status", "refresh-check", "end", "release", "doctor", "join",
-                 "inventory-hooks", "review-guard", "rebaseline"):
+                 "inventory-hooks", "review-guard", "rebaseline", "track"):
         command = commands.add_parser(name)
         command.add_argument("--repo", required=True, type=Path)
-        if name in ("configure", "install", "uninstall", "review-guard", "rebaseline"):
+        if name in ("configure", "install", "uninstall", "review-guard", "rebaseline", "track"):
             command.add_argument("--apply", action="store_true")
         if name == "configure":
             command.add_argument("--source-url", required=True)
@@ -34,6 +35,10 @@ def main(argv=None):
             command.add_argument("--policy", action="append", default=[])
             command.add_argument("--overlay", action="append", default=[])
             command.add_argument("--cache")
+            command.add_argument("--auto-update", action="store_true",
+                                 help="approve future executable controllers from this source")
+        if name == "track":
+            command.add_argument("--source-ref", required=True)
         if name == "install":
             command.add_argument("--runtime", choices=("claude", "opencode", "both"), default="both")
         if name in ("release", "join"):
@@ -46,18 +51,33 @@ def main(argv=None):
             command.add_argument("--source", required=True)
             command.add_argument("--digest", required=True)
             command.add_argument("--non-instruction-guard", action="store_true")
-    adapter = commands.add_parser("hook")
-    adapter.add_argument("--runtime", required=True, choices=("claude", "opencode"))
+    for name in ("hook", "bridge"):
+        adapter = commands.add_parser(name)
+        adapter.add_argument("--runtime", required=True, choices=("claude", "opencode"))
     arguments = parser.parse_args(argv)
     try:
         if hasattr(arguments, "repo"):
             arguments.repo = consumer_root(arguments.repo)
-        if arguments.command == "hook":
+        if arguments.command == "bridge":
+            from .bootstrap import hook as bridge
+            return bridge(arguments.runtime)
+        lifecycle_command = arguments.command in (
+            "status", "refresh-check", "end", "release", "join", "rebaseline")
+        if lifecycle_command and not os.environ.get("FLUTTER_GUIDELINES_DEPLOYMENT"):
+            from . import bootstrap
+            if bootstrap.enabled(arguments.repo):
+                result = bootstrap.command(arguments.repo, list(argv if argv is not None else sys.argv[1:]))
+                print(json.dumps(result, sort_keys=True, indent=2))
+                return 0
+        if arguments.command == "track":
+            from .bootstrap import track
+            result = track(arguments.repo, arguments.source_ref, arguments.apply)
+        elif arguments.command == "hook":
             return hook(arguments.runtime)
-        if arguments.command == "configure":
+        elif arguments.command == "configure":
             result = installation.configure(arguments.repo, {"url": arguments.source_url,
                 "ref": arguments.source_ref}, arguments.policy, arguments.overlay,
-                arguments.cache, arguments.apply)
+                 arguments.cache, arguments.apply, arguments.auto_update)
         elif arguments.command == "install":
             result = installation.install(arguments.repo, arguments.runtime, arguments.apply)
         elif arguments.command == "uninstall":

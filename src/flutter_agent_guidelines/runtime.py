@@ -33,8 +33,10 @@ def configuration(repo, discover_policies=True):
     config = read_json(repo / ".flutter-guidelines.json")
     if (not isinstance(config, dict) or type(config.get("schema")) is not int or
             config["schema"] != 1 or "source" not in config or
-            set(config) - {"schema", "source", "policies", "overlays", "cache", "reviewed_guards"}):
+            set(config) - {"schema", "source", "policies", "overlays", "cache", "reviewed_guards", "updates"}):
         raise SnapshotError("invalid runtime configuration")
+    if "updates" in config and config["updates"] != {"protocol": 1}:
+        raise SnapshotError("invalid executable-update approval")
     validate_source(config["source"])
     for field in ("policies", "overlays"):
         validate_paths(config.get(field, []))
@@ -117,9 +119,13 @@ def mark_rebaseline(repo):
             save_json(state_root(repo) / "work.json", work)
 
 
-def update_check(work):
+def update_check(work, repo=None):
     try:
-        revision = resolve(work["source"])
+        source = work["source"]
+        if repo is not None and configuration(repo, discover_policies=False).get("updates"):
+            from .bootstrap import future_source
+            source = future_source(repo, configuration(repo, discover_policies=False))
+        revision = resolve(source)
         return {"state": "CURRENT" if revision == work["revision"] else "UPDATE",
                 "revision": revision}
     except (SnapshotError, OSError):
@@ -170,12 +176,18 @@ def _join(repo, runtime, session, role="participant", expected=None, refresh=Fal
     root = state_root(repo)
     with locked(root):
         config = configuration(repo)
+        if config.get("updates") and not os.environ.get("FLUTTER_GUIDELINES_DEPLOYMENT"):
+            raise SnapshotError("managed work must use the stable bootstrap CLI/bridge")
         work = load_work(repo)
         key = runtime + ":" + session + (":" + lease if lease else "")
         if work is None:
             if expected:
                 raise SnapshotError("expected work is no longer active; explicit join cannot prepare")
-            revision, _, files = materialize(config["source"], cache_directory(config))
+            if config.get("updates"):
+                from .engine import materialized
+                revision, _, files = materialized(config)
+            else:
+                revision, _, files = materialize(config["source"], cache_directory(config))
             local = local_files(repo, config)
             identity = uuid.uuid4().hex
             controller = controller_identity()
@@ -204,7 +216,7 @@ def _join(repo, runtime, session, role="participant", expected=None, refresh=Fal
                                  "role": role, "adapter": adapter, "runtime": runtime,
                                  "session": session, "lease": lease}
         if refresh:
-            work["update"] = update_check(work)
+            work["update"] = update_check(work, repo)
         save_json(root / "work.json", work)
         injected = (context(repo, work, snapshot) if context_mode == "entry" else
                     provenance(work, snapshot) if context_mode == "provenance" else "")
@@ -242,7 +254,7 @@ def lifecycle(repo, action, runtime=None, session=None, lease=None):
         if action == "end" and work["phase"] == "rebaseline-required":
             raise PolicyDrift("rebaseline required before closure/acceptance")
         if action == "refresh-check":
-            work["update"] = update_check(work)
+            work["update"] = update_check(work, repo)
         elif action == "end":
             work["phase"] = "closing"
         elif action == "release":

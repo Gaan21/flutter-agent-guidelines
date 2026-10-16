@@ -2,6 +2,10 @@
 
 This Python-only artifact API stores and verifies explicit task inputs. It is not a release authenticator or automatic runtime. The separate approved-Git CLI/adapters use [runtime.md](runtime.md); their automatic work slot does not reuse this artifact API's slot.
 
+Opt-in [automatic Git controller updates](automatic-updates.md) do not make this API
+an installed factory integration or waive its stable-release approval requirement.
+Factory coordinator lifecycle and instruction-delivery integration remain separate.
+
 ## Trust before integrity
 
 An operator must authenticate an approved source/release, verify the installed artifact against its attestation, inspect the exported bundle and approve the exact external record. `approved_record_sha256` is the **out-of-band approved digest of that record**, not evidence obtained by simply hashing an arbitrary supplied record. This package compares identities; it supplies no trust store, signature verifier, Git source verification, artifact-download verification or network resolver.

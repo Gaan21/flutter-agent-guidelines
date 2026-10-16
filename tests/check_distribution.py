@@ -19,7 +19,7 @@ import zipfile
 PAYLOAD = ("AGENTS.md", "decisions/boundaries.md", "decisions/reliability.md",
            "procedures/verification.md", "references/upstream.md")
 NOTICES = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "provenance/README.md")
-ADAPTERS = ("adapters/opencode.js",)
+ADAPTERS = ("adapters/opencode.js", "adapters/opencode-bootstrap.js", "bootstrap-contract.json")
 
 
 def run(*arguments, cwd):

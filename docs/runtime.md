@@ -17,8 +17,11 @@ For installation and an initial connection check, start with the [README](../REA
 
 ## Authority and configuration
 
-One Flutter authority plus consumer-local policies. Installed Python controls execution;
-Git supplies only allowlisted Markdown and notices, never executable code.
+One Flutter authority plus consumer-local policies. In legacy content-only mode,
+installed Python controls execution and Git supplies only allowlisted Markdown/notices.
+With explicit `configure --auto-update` approval, a stable installed bootstrap also
+fetches allowlisted executable sources and selects immutable controller/adapter
+deployments before new work. See [Automatic updates](automatic-updates.md).
 Owner approval of an HTTPS source URL and ref (or full 40-character commit) is
 required. A hash proves integrity, not ownership or trust. Approved Git trials
 work with development packages; the separate artifact task API retains its
@@ -35,6 +38,11 @@ Consumer `.flutter-guidelines.json`:
   "cache": "/absolute/external/flutter-guidance-cache"
 }
 ```
+
+For automatic executable updates, configuration additionally contains
+`"updates": {"protocol": 1}`. This is explicit approval to execute future compatible
+controllers/adapters from the approved source. Omitting it preserves content-only
+behavior. The source URL cannot be changed through the future-ref selector.
 
 Paths are consumer-relative regular files; existing top-level instruction files
 must be listed as policies. Policies retain local authority and are drift-checked;
@@ -68,7 +76,7 @@ are promoted to global instructions.
 
 ## Command surface
 
-- `configure --repo ROOT --source-url HTTPS --source-ref REF [--policy PATH] [--overlay PATH] [--apply]`.
+- `configure --repo ROOT --source-url HTTPS --source-ref REF [--auto-update] [--policy PATH] [--overlay PATH] [--apply]`.
 - `install --repo ROOT [--runtime claude|opencode|both] [--apply]`: plan by default.
 - `uninstall --repo ROOT [--apply]`: remove owned integration only if unchanged.
 - `status --repo ROOT`: inspect verified work identity and leases.
@@ -78,7 +86,8 @@ are promoted to global instructions.
   from the existing common-source revision after all sessions exit and release.
 - `release --repo ROOT --runtime NAME --session ID`: explicit lease release after
   confirming that session has exited; crash recovery is operator-owned.
-- `doctor --repo ROOT`: configuration, installed controller and executable probes.
+- `doctor --repo ROOT`: configuration, stable installed controller and executable
+  probes; in automatic mode also reports the verified active work controller.
 - `inventory-hooks --repo ROOT`: known local/user Claude hook definitions,
   source/event/selector+handler fingerprints and review eligibility; read-only.
 - `review-guard --repo ROOT --source SOURCE --digest SHA256 --non-instruction-guard [--apply]`:
@@ -86,13 +95,18 @@ are promoted to global instructions.
 - `join --repo ROOT --runtime NAME --session ID --expected DIGEST [--role reviewer]`:
   explicit role receipt; existing work only, never resolve a replacement.
 - `hook --runtime NAME`: adapter protocol on stdin; not a user launcher.
+- `bridge --runtime NAME`: stable automatic-update transport; installed hooks use this instead of `hook`.
+- `track --repo ROOT --source-ref REF [--apply]`: select a moving or fixed ref of
+  the approved source for future work, without changing active work or versioned files.
 - Existing `inspect`, `export`, `verify` and Python artifact task APIs remain.
 
 ## Installation
 
 Explicit `--apply` activates only repository-local integration. Claude settings
 merge owned hook groups; existing permissions/hooks remain. OpenCode uses an
-auto-discovered dependency-free JavaScript plugin, leaving JSONC untouched.
+auto-discovered dependency-free JavaScript plugin, leaving JSONC untouched. In
+automatic-update mode this plugin is a stable dispatcher: it imports the verified
+per-work adapter implementation, not a replacement project plugin file.
 Unknown local/global instruction loaders and external native instruction
 delegations require inventory/removal before activation. Global authority files
 are conservatively refused; permissions and non-instruction settings remain.
@@ -110,7 +124,8 @@ After closing work, explicitly remove any superseded `reviewed_guards` entry
 before reviewing its replacement; stale approvals are never silently refreshed.
 Backups and hashes record owned changes; modified files block uninstall rather
 than losing edits. No global settings, tool grants, staging or executable updates.
-Restart both clients after installation. Claude requires >=2.1.295 for
+Restart both clients after installation or bootstrap migration. Compatible per-work
+controller/adapter selection does not rewrite their config-time files. Claude requires >=2.1.295 for
 event-specific `onFailure`: prompt/start failures continue; tool-launch failures
 block because the protected-state guard could not run. Runtime support must be
 established by actual-version probes.
@@ -140,7 +155,9 @@ callable in the harness, but native invocation/support is not established by the
 config probes and must not be relied on for release. Idle never releases leases.
 Concurrent instances retain independent leases. Crashes can require `release`.
 Controller/adapter changes invalidate verified injection, including already-loaded
-adapter hashes. Protected-state write guards remain active. No automatic executable upgrade.
+adapter hashes. Protected-state write guards remain active. Automatic-update mode
+never replaces an active deployment; only future work selects a new one. Its stable
+bootstrap is not automatically replaced.
 
 ### Local-policy rebaseline
 

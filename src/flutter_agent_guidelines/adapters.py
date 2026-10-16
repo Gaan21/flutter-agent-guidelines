@@ -6,7 +6,7 @@ import os
 import re
 import sys
 
-from .runtime import PolicyDrift, configuration, controller_identity, join, lifecycle, mark_rebaseline
+from .runtime import PolicyDrift, cache_directory, configuration, controller_identity, join, lifecycle, mark_rebaseline
 from .runtime_io import discover, state_root
 from .snapshots import SnapshotError, digest, regular_bytes
 
@@ -20,7 +20,11 @@ def verify_adapter(repo, payload):
     if not record.exists():
         raise SnapshotError("runtime not installed")
     installation = installation_record(repo)
-    if installation["controller"] != controller_identity():
+    managed = configuration(repo, discover_policies=False).get("updates") and os.environ.get("FLUTTER_GUIDELINES_DEPLOYMENT")
+    if managed:
+        from .engine import verify_execution
+        verify_execution(repo)
+    elif installation["controller"] != controller_identity():
         raise SnapshotError("installation controller changed; reinstall after work closure")
     for name, owned in installation["files"].items():
         if digest(regular_bytes(repo / name)) != owned["after"]:
@@ -36,7 +40,14 @@ def guard(repo, name, arguments, cwd=None):
     """Deny named protected targets, including symlink aliases. Shell stays permissioned."""
     protected = [state_root(repo).resolve(), (repo / ".flutter-guidelines.json").resolve(),
                  (repo / ".claude/settings.local.json").resolve(),
-                 (repo / ".opencode/plugins/flutter-guidelines.js").resolve()]
+                  (repo / ".opencode/plugins/flutter-guidelines.js").resolve()]
+    protected.append(Path(__file__).parent.resolve())
+    if sys.prefix != sys.base_prefix:
+        protected.append(Path(sys.prefix).resolve())
+    try:
+        protected.append(cache_directory(configuration(repo, discover_policies=False)).resolve())
+    except (SnapshotError, OSError, ValueError, TypeError):
+        pass  # Local protected targets remain guarded even with broken configuration.
     readonly = {"read", "glob", "grep", "list", "Read", "Glob", "Grep", "LS",
                 "webfetch", "websearch", "WebFetch", "WebSearch"}
     if name in readonly:
@@ -68,7 +79,8 @@ def verified_handle(runtime, payload):
     repo = discover(payload.get("cwd") or "")
     if runtime == "claude" and payload.get("hook_event_name") == "SessionEnd":
         if not payload.get("agent_id"):
-            lifecycle(repo, "release", runtime, payload["session_id"], "process-" + str(os.getppid()))
+            lifecycle(repo, "release", runtime, payload["session_id"],
+                      payload.get("bootstrap_lease") or "process-" + str(os.getppid()))
         return {}
     if runtime == "opencode" and payload.get("event") == "release":
         if not payload.get("lease"):
@@ -79,13 +91,13 @@ def verified_handle(runtime, payload):
     if runtime == "claude":
         event = payload["hook_event_name"]
         session = payload["session_id"]
-        lease = "process-" + str(os.getppid())
+        lease = payload.get("bootstrap_lease") or "process-" + str(os.getppid())
         normalized = {"SessionStart": "prompt", "UserPromptSubmit": "prompt",
                       "PreToolUse": "tool"}.get(event)
         if normalized is None:
             raise SnapshotError("unsupported Claude hook event")
     else:
-        normalized = payload["event"]
+        normalized = "verify" if payload["event"] == "select" else payload["event"]
         session = payload.get("session_id")
         lease = payload.get("lease")
         if not lease:

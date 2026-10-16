@@ -8,7 +8,7 @@ This repository contains the Flutter guidelines and the small tool that loads th
 
 After a one-time setup in a Flutter project:
 
-1. **Open your agent normally.** The tool downloads the approved Flutter guidelines and gives the agent a short starting page.
+1. **Open your agent normally.** Before a new work unit, the stable bootstrap resolves the approved channel to an exact commit and prepares its Python controller, compatible adapters and guidance. Only then does the controller create a verified work identity and give the agent a short starting page.
 2. **Work with focused context.** The agent reads detailed guidance only when relevant. Project-local rules remain authoritative; subfolder rules keep their original scope.
 3. **Review against the same rules.** Other agent sessions in that project join the same saved version, including the reviewer.
 4. **Finish the work explicitly.** Once work and review are accepted, the agent or operator marks it finished. After the old sessions exit, the next work uses the latest approved version.
@@ -35,17 +35,18 @@ Written guidance helps the agent make decisions. Your project's analyzer, lints 
 ## What is available today?
 
 - **Development version:** `0.1.0.dev0`, available as source on GitHub and buildable locally. Not published to PyPI, npm, GitHub Packages or pub.dev.
-- **Implemented:** local Claude Code/OpenCode integration, automatic snapshots, shared implementation/review identity, update notices and reversible installation.
+- **Implemented:** opt-in automatic controller/content updates, immutable per-revision deployments, local Claude Code/OpenCode integration, shared implementation/review identity, update notices and reversible installation. Existing content-only installations need the [one-time migration](docs/automatic-updates.md#migrate-an-existing-git-installation).
 - **Initial real-project trial:** a reported OpenCode session in a Flutter project received the public guidance and automatically loaded folder-local `AGENTS.md` instructions when reading data and presentation code. This trial used an earlier adapter revision; it does not validate subsequent runtime changes.
 
 | Validation area | Evidence and remaining scope |
 |---|---|
-| Package and automated behavior | Previously recorded run: 42 automated tests and clean package installation on macOS arm64, Python 3.14.8. This is environment-specific evidence, not a cross-platform guarantee. |
+| Package and automated behavior | Automated tests cover package installation, controller/content updates, fixed revisions, offline behavior, concurrency and identity/protection checks on macOS arm64, Python 3.14.8. See the reproducible package check below; this is not a cross-platform guarantee. |
 | Client configuration | Earlier probes used Claude Code 2.1.301 and OpenCode 1.19.0. Configuration probes do not prove interactive lifecycle behavior. |
 | OpenCode in a real Flutter project | Initial trial reported public injection and folder-local instruction loading. Full lifecycle and subsequent runtime changes still need verification. |
 | Claude Code in a real Flutter project | Public injection and folder-local loading still need separate trial verification; an existing `CLAUDE.md` import alone is insufficient evidence. |
 | Shared review and shutdown | Same-identity reviewer participation, native session release, restart/resume and crash recovery still need end-to-end trial verification. |
 | Recovery and policy changes | Native warning delivery and explicit rebaseline behavior still need trial verification with the updated installed controller. |
+| Automatic executable updates | Isolated Python subprocess and direct Node hook tests cover the stable bootstrap and versioned adapters. Native Claude/OpenCode startup, resume and shutdown still require real-client trials. Factory coordinator integration is pending its own contract. |
 
 **Next:** complete those native lifecycle and recovery checks in controlled consumer trials. Simulated hook events and a successful startup do not prove the whole interactive lifecycle.
 
@@ -78,17 +79,17 @@ Do this once per project, with the project owner's approval. Use an existing pro
 PROJECT="/absolute/path/to/your/flutter-project"
 flutter-guidelines configure --repo "$PROJECT" \
   --source-url https://github.com/Gaan21/flutter-agent-guidelines.git \
-  --source-ref refs/heads/develop
+  --source-ref refs/heads/develop --auto-update
 ```
 
-This first command shows the proposed configuration. It does not save it. The example chooses this repository's `develop` branch as the approved source of guidelines; you can choose an exact full Git commit instead.
+This first command shows the proposed configuration. It does not save it. `--auto-update` approves execution of future compatible Python controllers and adapters from this source, not just Markdown downloads. The example follows `develop`; you can choose an exact full Git commit instead. Omit the flag for legacy content-only operation with a manually maintained controller.
 
 If that source is the one you want, save it:
 
 ```sh
 flutter-guidelines configure --repo "$PROJECT" \
   --source-url https://github.com/Gaan21/flutter-agent-guidelines.git \
-  --source-ref refs/heads/develop --apply
+  --source-ref refs/heads/develop --auto-update --apply
 ```
 
 The tool discovers existing local `AGENTS.md`, `CLAUDE.md` and Claude rule files. Additional project-specific decisions can be listed with `--policy` or `--overlay`; the scope rules are documented in [Runtime details](docs/runtime.md), section "Context and local scope".
@@ -136,6 +137,8 @@ Existing protection hooks also need review, rather than deletion. `inventory-hoo
 | Runtime verification fails | Continues conversation without new guideline injection and shows a warning; protected-state write guards remain active. |
 | Project-local policies change | Requires explicit human rebaseline before closure/acceptance; reads and ordinary edits continue. |
 
+With automatic updates approved, first preparation includes the controller and versioned adapters as well as the documents. If channel resolution or preparation fails, conversation continues with a warning and no new verified work. An existing work can continue from its verified deployment and snapshot offline; its freshness is reported as `UNKNOWN` when it cannot be checked. A cached fixed revision can also prepare new work offline. See [Automatic updates](docs/automatic-updates.md) for version selection, rollback, recovery and client limits.
+
 To inspect the current work or check for updates, use the installed CLI from an activated tools environment, or its full path:
 
 ```sh
@@ -153,13 +156,13 @@ This marks the work as closing. Existing sessions can finish, new sessions canno
 
 Closing a window or leaving an agent idle does not count as accepting the work. If a client crashes and leaves a connection recorded, inspect it before using the recovery command `release`. The [runtime contract](docs/runtime.md), section "Work lifecycle", explains this boundary and the native behavior still requiring trial verification.
 
-Updating the installed tool is separate from receiving new guideline content. Close active work and uninstall the old integration before changing its installed controller.
+Compatible controllers and versioned adapters update automatically for future work in automatic-update mode. The stable bootstrap environment remains installed and unchanged. Upgrading that bootstrap or its Python interpreter is an explicit migration: close affected work, exit sessions, uninstall the old integration and install the replacement connection.
 
 ### Source updates and package releases
 
 This repository is already a Python package: `flutter-agent-guidelines` installs the `flutter-guidelines` command. The installation above builds a local wheel; there is no registry release to install yet. It is tooling for your agent, not a Dart or Flutter application dependency.
 
-A Git push makes source changes available. Projects following an approved moving ref can discover new guideline content, while active work keeps its snapshot. Changes to Python or adapter code require rebuilding and reinstalling the tool and its project integration; fetching new guidance does not upgrade the controller. Publishing a versioned package to a registry is a separate release action.
+A Git push makes source changes available. In automatic-update mode, future work follows the approved ref for content, Python and compatible versioned adapters; active work keeps its entire deployment. Legacy content-only installations still require manual controller updates. Publishing a versioned package to a registry is a separate release action.
 
 ## Remove the project connection
 
@@ -180,7 +183,7 @@ Close the work and exit its sessions first. If an owned file has since been edit
 - **Python automation:** [Artifact task API](docs/task-api.md) describes the separate stable-release artifact interface. Its release requirement does not prevent explicitly approved Git-source trials.
 - **Standalone content:** `inspect` lists installed content; `export PARENT` saves a snapshot into an existing directory; `verify SNAPSHOT --digest SHA256` checks it against a separately retained fingerprint. These operations do not activate an agent connection.
 
-The runtime fetches allowlisted guideline files and notices, not executable code. The installed package supplies the executable logic. File fingerprints detect differences; source approval is still the owner's decision. Read-only files and tool guards discourage accidental writes, not hostile processes running as the same user.
+Automatic-update mode fetches and executes allowlisted Python and adapter files only from the explicitly approved source, without running setup/build hooks or downloading dependencies. Legacy content-only mode fetches Markdown and notices only. File fingerprints detect differences; source approval is still the owner's decision. Read-only files and tool guards discourage accidental writes, not hostile processes running as the same user.
 
 ### Run the package checks
 
