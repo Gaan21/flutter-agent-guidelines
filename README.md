@@ -233,6 +233,13 @@ Legacy source selection and `--auto-update` remain explicit compatibility paths:
 [Legacy runtime](docs/runtime.md), [automatic updates](docs/automatic-updates.md).
 The [artifact task API](docs/task-api.md) retains its task identity contract.
 
+### Delivery simplification trial
+
+We are evaluating rulesync before building more custom delivery tooling. See the
+[disposable trial preparation](docs/rulesync-trial.md) and saved
+[product-agent prompt](docs/rulesync-trial-prompt.md). This is a local evaluation,
+not a registry release or an automatic migration of existing connections.
+
 ## Verification and limits
 
 Installed-mode Python subprocess tests and a direct Node adapter harness verify

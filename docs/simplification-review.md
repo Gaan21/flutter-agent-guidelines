@@ -1,12 +1,101 @@
 # Simplification review brief
 
-Status: installed-version direction implemented and activated in the first
-consumer (2026-10-16). Owner verdict: still too heavy to install and update; see
+Status: evaluate rulesync before building more delivery tooling (2026-10-16).
+Installed mode works in the first consumer but remains too heavy; see
 [installed-mode adoption feedback](#installed-mode-adoption-feedback--2026-10-16). Original
 review requested by the owner on 2026-10-15. Audience: the next agent or
 maintainer asked to review this repository's delivery model. Deliverable: a written
 comparison and recommendation. Do not change code, release or consumer
 installations as part of the review; the owner decides afterwards.
+
+## Next direction: evaluate rulesync first — 2026-10-16
+
+The owner selected evaluation of [rulesync](https://github.com/dyoshikawa/rulesync)
+before further custom installer development. This is an evaluation decision, not
+adoption, consumer migration or a verified compatibility claim. A custom common
+delivery tool remains a fallback if existing tools cannot meet the requirements.
+Use the [trial preparation](rulesync-trial.md) and saved
+[product-agent prompt](rulesync-trial-prompt.md) for the next step.
+
+### Intended experience
+
+- New repository: one command and at most one restart of each selected client.
+- Update: one explicit, obvious operation selecting an exact new version;
+  upstream publication and client startup must not silently change the selection.
+- Claude Code and OpenCode must receive the selected guidance. No consumer-owned
+  installer or integration probe should be necessary for routine use.
+- Maintain original Markdown guidance as technology modules, reusable across
+  repositories. Examples include Flutter, Supabase, C#, Astro and TypeScript;
+  these are desired combinations, not a claim that modules already exist.
+- A repository selects its modules explicitly; mixed repositories need scoped
+  selections by directory. Available content need not become loaded context.
+- Keep a short starting entry and consult detailed guidance when relevant.
+  Preserve local project authority, folder scope, existing hooks and guards.
+- Keep guidance independent from executable lints and their dependency versions.
+  Selecting Flutter guidance must not install or update dart-architecture-lints.
+
+### What an existing tool might replace
+
+Rulesync documents shared sources, content selection, client-specific generation
+and revision/hash locks. These are candidates to replace our acquisition and
+generation machinery, not evidence that all runtime guarantees are equivalent.
+Markdown may need tool-specific metadata and project configuration. A generator
+does not establish client loading, behavioral compliance or task identity merely
+by producing files. See its [declarative source documentation](https://github.com/dyoshikawa/rulesync/blob/main/docs/guide/declarative-sources.md).
+
+Do not choose Python, uv, PyPI or a custom hook architecture before evaluating the
+existing tool. Package runners and standalone binaries are distribution options;
+their prerequisites and first-use downloads must be counted in the trial.
+
+### Automated consumer requirements
+
+A trusted host prepares the repository before agents start. Agent commands run
+without network access or credentials; preparation must require no interactive
+restart. Pin the engine, source revision, selected bundles, local policy and
+overlays once for both implementer and reviewer. Verify the delivered guidance
+against that independently retained identity; never resolve latest per role or
+modify a live snapshot. Distinguish source bytes from any client transformation.
+Hashes establish integrity, not publisher trust or proof of client delivery.
+
+### Trial and acceptance
+
+Local generation experiments use disposable fixtures outside this repository
+and consumers. The owner also selected a real product-repository trial, carried
+out by that repository's agent under its own instructions and authorization.
+Record an exact released rulesync version and source revision, prerequisites,
+commands, generated files and hashes. Preserve the canonical payload; do not
+import third-party rule collections. Remove disposable trial files afterwards.
+
+Measure content selection, repeatability, update behavior, prepared offline use,
+tamper/missing-file handling and coexistence with local instructions. Count actual
+setup/update steps. A frozen dependency lock must not be assumed to disable
+network access. Record separately what is documented, statically checked and
+tested in installed clients.
+
+Client acceptance must cover first-turn delivery, directory scope, resume and
+compaction in both clients. Scope, model execution and credentials for such trials
+need explicit authorization; generated files alone cannot establish this result.
+If rulesync leaves gaps, assess whether a small trusted-host check can fill them
+before choosing another tool or building a replacement.
+
+### Owner-confirmed choices
+
+- Suggest technologies and directory scopes initially, then obtain confirmation
+  and persist the selection. Do not silently activate modules on later starts.
+- Start with one shared content release; each repository activates only its
+  selected modules. Independent per-module versions remain a possible extension.
+- Explicit local product decisions override common guidance. Preserve and report
+  exceptions without silently rewriting product architecture or lint selections.
+- Evaluate in a real product repository through its own agent, including actual
+  Claude Code and OpenCode sessions. Generation-only checks are insufficient.
+  This document does not itself activate a consumer or authorize global changes.
+
+The product trial must inventory existing loaders, protect unrelated settings
+and guards, and define a reversible test arrangement without double injection.
+Keep installation/generation evidence separate from observed client delivery.
+Where a client session cannot be run or inspected, report that check as pending;
+do not substitute a model's claimed compliance for delivery evidence. Record any
+limitations in demonstrating exact source text, folder scope or task identity.
 
 ## Owner-selected direction — 2026-10-16
 
