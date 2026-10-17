@@ -16,6 +16,8 @@ adoption, consumer migration or a verified compatibility claim. A custom common
 delivery tool remains a fallback if existing tools cannot meet the requirements.
 Use the [trial preparation](rulesync-trial.md) and saved
 [product-agent prompt](rulesync-trial-prompt.md) for the next step.
+The first-consumer trial is done: see the [trial result](rulesync-trial-result.md)
+and its maintainer verification handoff before choosing a custom tool.
 
 ### Intended experience
 

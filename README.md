@@ -239,6 +239,8 @@ We are evaluating rulesync before building more custom delivery tooling. See the
 [disposable trial preparation](docs/rulesync-trial.md) and saved
 [product-agent prompt](docs/rulesync-trial-prompt.md). This is a local evaluation,
 not a registry release or an automatic migration of existing connections.
+The first-consumer [trial result](docs/rulesync-trial-result.md) awaits maintainer
+verification.
 
 ## Verification and limits
 

@@ -2,6 +2,7 @@
 
 Status: preparation only; no consumer migration. Use the
 [product-agent prompt](rulesync-trial-prompt.md) for the real-client trial.
+First-consumer outcome and verification handoff: [trial result](rulesync-trial-result.md).
 The [review brief](simplification-review.md#next-direction-evaluate-rulesync-first--2026-10-16)
 records the goals and owner choices.
 
