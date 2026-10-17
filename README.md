@@ -233,14 +233,17 @@ Legacy source selection and `--auto-update` remain explicit compatibility paths:
 [Legacy runtime](docs/runtime.md), [automatic updates](docs/automatic-updates.md).
 The [artifact task API](docs/task-api.md) retains its task identity contract.
 
-### Delivery simplification trial
+### Next delivery model: agent-guides
 
-We are evaluating rulesync before building more custom delivery tooling. See the
-[disposable trial preparation](docs/rulesync-trial.md) and saved
-[product-agent prompt](docs/rulesync-trial-prompt.md). This is a local evaluation,
-not a registry release or an automatic migration of existing connections.
-The first-consumer [trial result](docs/rulesync-trial-result.md) awaits maintainer
-verification.
+The completed comparison favors Git acquisition and native Claude Code/OpenCode
+loading over rulesync. The owner selected `agent-guides`, a separate neutral Python
+package in its own public repository, with PyPI/releases and macOS/Linux support
+targets. The goal is one
+installation/update operation, a short initial entry and local details read when
+relevant. Start with the [agent handoff and tasks](docs/tasks/README.md); the
+[agreed scope](docs/delivery-scope.md) records decisions and acceptance boundaries.
+This replacement is not implemented; the
+installation commands above describe the current package.
 
 ## Verification and limits
 
