@@ -1,8 +1,8 @@
-# agent-guides task handoff moved
+# agent-guides-cli task handoff moved
 
 The single authoritative task board and execution records now live in
-[Gaan21/agent-guides](https://github.com/Gaan21/agent-guides), at
-`docs/tasks/README.md`. The approved local checkout is the sibling `agent-guides`
+[Gaan21/agent-guides-cli](https://github.com/Gaan21/agent-guides-cli), at
+`docs/tasks/README.md`. The approved local checkout is the sibling `agent-guides-cli`
 directory. The owner authorized committing and pushing the scaffold and these
 forwarding documents. Releases, registry publication and activation are separate.
 

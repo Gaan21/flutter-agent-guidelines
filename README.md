@@ -233,12 +233,13 @@ Legacy source selection and `--auto-update` remain explicit compatibility paths:
 [Legacy runtime](docs/runtime.md), [automatic updates](docs/automatic-updates.md).
 The [artifact task API](docs/task-api.md) retains its task identity contract.
 
-### Next delivery model: agent-guides
+### Next delivery model: agent-guides-cli
 
 The completed comparison favors Git acquisition and native Claude Code/OpenCode
-loading over rulesync. The owner selected `agent-guides`, a separate neutral Python
+loading over rulesync. The owner selected `agent-guides-cli`, a separate neutral Python
 package in its own public repository, with PyPI/releases and macOS/Linux support
-targets. The goal is one
+targets. Common authored guidance moves to the separate public
+[agent-guides](https://github.com/Gaan21/agent-guides) catalog. The goal is one
 installation/update operation, a short initial entry and local details read when
 relevant. Start with the [agent handoff and tasks](docs/tasks/README.md); the
 [agreed scope](docs/delivery-scope.md) records decisions and acceptance boundaries.
